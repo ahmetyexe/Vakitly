@@ -1,0 +1,58 @@
+1. Hafta: Kurulum ve Sunucu:
+
+Node.js kurulumu.
+
+package.json oluşturma.
+
+Basit bir server.js yazıp "Merhaba Dünya" yazdırma.
+
+SQLite kütüphanesinin (sqlite3) projeye eklenmesi.
+
+2. Hafta: Veritabanı Tasarımı:
+
+SQLite veritabanının oluşturulması.
+
+Tabloların SQL ile oluşturulması (CREATE TABLE).
+
+İki ana tablo: businesses (İşletmeler) ve appointments (Randevular).
+
+Faz 2: İşletme Tarafı (Hafta 3-4)
+3. Hafta: İşletme Kayıt Arayüzü (Frontend):
+
+business.html formunun tasarlanması.
+
+Personel sayısı, saatler vb. giriş alanları.
+
+4. Hafta: Kayıt API'si (Backend):
+
+Formdan gelen veriyi alıp SQLite veritabanına kaydeden sunucu kodunun yazılması (INSERT INTO).
+
+Hata yönetimi (Örn: Boş alan kontrolü).
+
+Faz 3: Müşteri Tarafı ve Arama (Hafta 5-6)
+5. Hafta: Arama ve Listeleme:
+
+index.html arama çubuğu tasarımı.
+
+Veritabanından işletmeleri isme göre çeken arama fonksiyonu (SELECT * FROM businesses WHERE name LIKE ...).
+
+6. Hafta: Randevu Müsaitlik Ekranı:
+
+Seçilen işletmenin çalışma saatlerine göre saat dilimlerini (slotları) oluşturma.
+
+Örn: 09:00 - 18:00 arasını 30'ar dakikalık butonlara bölme.
+
+Faz 4: Mantık ve Tamamlama (Hafta 7-8)
+7. Hafta: Personel ve Çakışma Kontrolü (Zor Kısım):
+
+Randevu kaydetme işlemi.
+
+Algoritma: O saatte kaç randevu var? Eğer sayı < personel sayısı ise onayla, değilse reddet.
+
+8. Hafta: Test, Düzeltme ve Dokümantasyon:
+
+Farklı senaryoları deneme (Aynı saate 4 kişi randevu almaya çalışırsa ne olur?).
+
+Tasarım (CSS) iyileştirmeleri.
+
+Readme dosyasının son halini verme.
