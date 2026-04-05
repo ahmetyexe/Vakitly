@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vakitly – Yönetici Paneli</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Tokens ─────────────────────────────────────────── */
+    :root {
+      --bg:        #f0f7ff;
+      --surface:   #ffffff;
+      --primary:   #4f8ef7;
+      --primary-d: #2563eb;
+      --accent:    #818cf8;
+      --success:   #34d399;
+      --danger:    #ef4444;
+      --danger-lt: #fee2e2;
+      --text:      #1e293b;
+      --sub:       #64748b;
+      --border:    #e2e8f0;
+      --radius:    14px;
+      --shadow:    0 4px 6px -1px rgb(0 0 0/.08), 0 2px 4px -2px rgb(0 0 0/.05);
+      --shadow-lg: 0 10px 40px rgb(79 142 247/.15);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ─── Navbar ──────────────────────────────────────────── */
+    nav {
+      background: linear-gradient(135deg, #4f8ef7 0%, #818cf8 60%, #a78bfa 100%);
+      padding: 0 28px;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 20px rgb(79 142 247/.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo { font-size: 1.4rem; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+    .logo span { color: #bae6fd; }
+    .nav-actions { display: flex; align-items: center; gap: 10px; }
+
+    /* ─── Genel Buton ─────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px;
+      border: none; border-radius: 8px;
+      font-family: inherit; font-size: .875rem; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    .btn-primary { background: rgba(255,255,255,.2); color: #fff; border: 1px solid rgba(255,255,255,.35); }
+    .btn-primary:hover { background: rgba(255,255,255,.32); }
+
+    .btn-danger { background: var(--danger-lt); color: var(--danger); }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+
+    .btn-ghost { background: #f1f5f9; color: var(--sub); }
+    .btn-ghost:hover { background: var(--border); }
+
+    /* ─── Layout ─────────────────────────────────────────── */
+    .page { max-width: 1200px; margin: 0 auto; padding: 32px 20px 60px; }
+
+    /* ─── Stat Kartları ───────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; gap: 14px;
+      animation: fadeUp .4s ease both;
+    }
+    .stat-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: grid; place-items: center;
+      font-size: 1.3rem; flex-shrink: 0;
+    }
+    .stat-body {}
+    .stat-label { font-size: .72rem; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: .5px; }
+    .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--primary-d); line-height: 1.2; }
+
+    /* ─── Araç Çubuğu ─────────────────────────────────────── */
+    .toolbar {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      display: flex; gap: 12px; align-items: center;
+      margin-bottom: 20px;
+      animation: fadeUp .4s ease .06s both;
+    }
+    .search-wrap {
+      flex: 1; position: relative;
+    }
+    .search-wrap input {
+      width: 100%; padding: 10px 16px 10px 40px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-family: inherit; font-size: .95rem; color: var(--text);
+      background: #f8faff; outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .search-wrap input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgb(79 142 247/.15); }
+    .search-icon {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--sub); pointer-events: none; font-size: .95rem;
+    }
+    .filter-select {
+      padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px;
+      font-family: inherit; font-size: .875rem; color: var(--text);
+      background: #f8faff; outline: none; cursor: pointer;
+      transition: border-color .2s;
+    }
+    .filter-select:focus { border-color: var(--primary); }
+
+    /* ─── Masa (Desktop) ──────────────────────────────────── */
+    .table-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      animation: fadeUp .4s ease .12s both;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: #f8faff; }
+    th {
+      padding: 14px 18px;
+      font-size: .72rem; font-weight: 700; color: var(--sub);
+      text-transform: uppercase; letter-spacing: .5px;
+      text-align: left; border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    td {
+      padding: 16px 18px;
+      font-size: .9rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background .15s; }
+    tbody tr:hover { background: #f8faff; }
+
+    .td-name { font-weight: 700; color: var(--text); }
+    .td-sub  { font-size: .78rem; color: var(--sub); margin-top: 3px; }
+
+    /* ─── Badge ───────────────────────────────────────────── */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: .72rem; font-weight: 700;
+      background: #dbeafe; color: #1d4ed8;
+    }
+    .badge.spa    { background: #fce7f3; color: #9d174d; }
+    .badge.doktor { background: #d1fae5; color: #065f46; }
+    .badge.berber { background: #fef3c7; color: #92400e; }
+    .badge.guzellik { background: #ede9fe; color: #5b21b6; }
+
+    /* ─── Yükleme / Boş ───────────────────────────────────── */
+    .empty-state {
+      text-align: center; padding: 60px 20px;
+      color: var(--sub); font-size: 1rem;
+    }
+    .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 48px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Kart Görünümü (Mobil) ───────────────────────────── */
+    .cards-list { display: none; flex-direction: column; gap: 14px; }
+    .biz-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      padding: 18px;
+      animation: fadeUp .3s ease both;
+    }
+    .biz-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .biz-card-title { font-weight: 700; font-size: 1rem; }
+    .biz-card-body  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .biz-card-item  { display: flex; flex-direction: column; gap: 2px; }
+    .biz-card-key   { font-size: .68rem; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: .4px; }
+    .biz-card-val   { font-size: .88rem; font-weight: 600; color: var(--text); }
+    .biz-card-footer { border-top: 1px solid var(--border); padding-top: 12px; display: flex; justify-content: flex-end; }
+
+    /* ─── Modal ───────────────────────────────────────────── */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 32px;
+      max-width: 420px; width: calc(100% - 40px);
+      box-shadow: var(--shadow-lg);
+      animation: fadeUp .25s ease;
+    }
+    .modal-icon { font-size: 2.5rem; text-align: center; margin-bottom: 12px; }
+    .modal-title { font-size: 1.15rem; font-weight: 700; text-align: center; margin-bottom: 8px; }
+    .modal-desc  { font-size: .9rem; color: var(--sub); text-align: center; margin-bottom: 24px; line-height: 1.5; }
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-actions .btn { flex: 1; justify-content: center; padding: 12px; }
+    .btn-cancel { background: #f1f5f9; color: var(--text); }
+    .btn-confirm { background: var(--danger); color: #fff; }
+    .btn-confirm:hover { background: #dc2626; }
+
+    /* ─── Toast ───────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      background: #1e293b; color: #fff;
+      padding: 12px 24px; border-radius: 10px;
+      font-size: .9rem; font-weight: 600;
+      box-shadow: 0 8px 24px rgb(0 0 0/.25);
+      transition: transform .35s cubic-bezier(.4,0,.2,1);
+      z-index: 300; white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.success { border-left: 4px solid var(--success); }
+    #toast.error   { border-left: 4px solid var(--danger); }
+
+    /* ─── Animasyon ───────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Responsive ──────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .stats-row { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      nav { padding: 0 16px; }
+      .logo { font-size: 1.2rem; }
+      .page { padding: 20px 14px 60px; }
+      .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .stat { padding: 14px 16px; }
+      .stat-icon { width: 36px; height: 36px; font-size: 1.1rem; }
+      .stat-value { font-size: 1.2rem; }
+      .toolbar { flex-wrap: wrap; }
+      .filter-select { width: 100%; }
+      /* Masayı gizle, kartları göster */
+      .table-card { display: none; }
+      .cards-list  { display: flex; }
+    }
+    @media (max-width: 380px) {
+      .stats-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── Navbar ─── -->
+<nav>
+  <div class="logo">Vakit<span>ly</span> <span style="font-size:.9rem;opacity:.75;font-weight:500">Admin</span></div>
+  <div class="nav-actions">
+    <a href="business.html" class="btn btn-primary">＋ İşletme Ekle</a>
+  </div>
+</nav>
+
+<!-- ─── Silme Modal ─── -->
+<div class="modal-backdrop" id="deleteModal">
+  <div class="modal">
+    <div class="modal-icon">🗑️</div>
+    <div class="modal-title">İşletmeyi Sil</div>
+    <div class="modal-desc" id="modalDesc">Bu işlemi geri alamazsınız.</div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">İptal</button>
+      <button class="btn btn-confirm" id="confirmDeleteBtn">Evet, Sil</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Toast ─── -->
+<div id="toast"></div>
+
+<!-- ─── Sayfa İçeriği ─── -->
+<div class="page">
+
+  <!-- İstatistikler -->
+  <div class="stats-row">
+    <div class="stat" style="animation-delay:0s">
+      <div class="stat-icon" style="background:#dbeafe">🏢</div>
+      <div class="stat-body">
+        <div class="stat-label">Toplam İşletme</div>
+        <div class="stat-value" id="statTotal">—</div>
+      </div>
+    </div>
+    <div class="stat" style="animation-delay:.06s">
+      <div class="stat-icon" style="background:#dcfce7">👥</div>
+      <div class="stat-body">
+        <div class="stat-label">Toplam Personel</div>
+        <div class="stat-value" id="statPersonel">—</div>
+      </div>
+    </div>
+    <div class="stat" style="animation-delay:.12s">
+      <div class="stat-icon" style="background:#ede9fe">⏱️</div>
+      <div class="stat-body">
+        <div class="stat-label">Ort. Randevu Süresi</div>
+        <div class="stat-value" id="statSure">—</div>
+      </div>
+    </div>
+    <div class="stat" style="animation-delay:.18s">
+      <div class="stat-icon" style="background:#fef3c7">📅</div>
+      <div class="stat-body">
+        <div class="stat-label">Toplam Kapasite/Gün</div>
+        <div class="stat-value" id="statKapasite">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Araç çubuğu -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="İşletme adına göre ara…" />
+    </div>
+    <select class="filter-select" id="filterKategori">
+      <option value="">Tüm Kategoriler</option>
+      <option value="berber">Berber / Kuaför</option>
+      <option value="guzellik">Güzellik & Cilt Bakımı</option>
+      <option value="dis">Diş Kliniği</option>
+      <option value="doktor">Doktor / Poliklinik</option>
+      <option value="spa">SPA & Masaj</option>
+      <option value="veteriner">Veteriner</option>
+      <option value="hukuk">Avukatlık / Danışmanlık</option>
+      <option value="diger">Diğer</option>
+    </select>
+  </div>
+
+  <!-- ── Desktop: Tablo ── -->
+  <div class="table-card" id="tableCard">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>İşletme</th>
+          <th>İletişim</th>
+          <th>Saatler</th>
+          <th>Personel / Süre</th>
+          <th>Kayıt Tarihi</th>
+          <th>İşlem</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div id="tableStatus"></div>
+  </div>
+
+  <!-- ── Mobil: Kartlar ── -->
+  <div class="cards-list" id="cardsList"></div>
+
+</div><!-- /.page -->
+
+<script>
+/* ── State ─────────────────────────────────────────────── */
+let tumIsletmeler = [];
+let silinecekId   = null;
+
+/* ── Yardımcılar ────────────────────────────────────────── */
+const badge = (kat) => `<span class="badge ${kat}">${kat}</span>`;
+const fmt   = (tarih) => tarih ? tarih.slice(0,10) : '—';
+
+function saatFarki(a, k) {
+  const [ah,am] = a.split(':').map(Number);
+  const [kh,km] = k.split(':').map(Number);
+  return (kh*60+km) - (ah*60+am);
+}
+
+/* ── API ────────────────────────────────────────────────── */
+async function fetchIsletmeler() {
+  showStatus('loading');
+  try {
+    const resp = await fetch('http://localhost:3000/api/isletmeler');
+    if (!resp.ok) throw new Error('Sunucu hatası');
+    const data = await resp.json();
+    tumIsletmeler = data.isletmeler || [];
+    renderAll();
+  } catch (e) {
+    showStatus('error', 'Sunucuya bağlanılamadı. <code>node server.js</code> çalışıyor mu?');
+  }
+}
+
+/* ── Render ─────────────────────────────────────────────── */
+function renderAll() {
+  const q   = document.getElementById('searchInput').value.toLowerCase().trim();
+  const kat = document.getElementById('filterKategori').value;
+
+  const filtered = tumIsletmeler.filter(is =>
+    (!q   || is.ad.toLowerCase().includes(q)) &&
+    (!kat || is.kategori === kat)
+  );
+
+  updateStats(filtered);
+  renderTable(filtered);
+  renderCards(filtered);
+}
+
+function updateStats(list) {
+  document.getElementById('statTotal').textContent    = list.length;
+  const toplamP  = list.reduce((s, i) => s + (i.personel_sayisi || 0), 0);
+  document.getElementById('statPersonel').textContent = toplamP;
+  const ortalama = list.length
+    ? Math.round(list.reduce((s, i) => s + (i.randevu_suresi || 0), 0) / list.length)
+    : 0;
+  document.getElementById('statSure').textContent     = ortalama ? ortalama + ' dk' : '—';
+  const toplamKap = list.reduce((s, is) => {
+    const dk = saatFarki(is.acilis_saati || '09:00', is.kapanis_saati || '18:00');
+    return s + (Math.floor(dk / (is.randevu_suresi || 30)) * (is.personel_sayisi || 1));
+  }, 0);
+  document.getElementById('statKapasite').textContent = toplamKap || '—';
+}
+
+function renderTable(list) {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+
+  if (list.length === 0) {
+    showStatus('empty');
+    return;
+  }
+  document.getElementById('tableStatus').innerHTML = '';
+
+  list.forEach((is, i) => {
+    const gunler = (is.calisma_gunleri || '').toUpperCase().split(',').join(' · ');
+    const tr = document.createElement('tr');
+    tr.dataset.id  = is.id;
+    tr.dataset.ad  = is.ad;
+    tr.innerHTML = `
+      <td style="color:var(--sub);font-size:.8rem">${is.id}</td>
+      <td>
+        <div class="td-name">${escHtml(is.ad)}</div>
+        <div class="td-sub">${badge(is.kategori)}</div>
+      </td>
+      <td>
+        <div>📞 ${escHtml(is.telefon)}</div>
+        <div class="td-sub">📍 ${escHtml(is.adres)}</div>
+      </td>
+      <td>
+        <div style="font-weight:600">🕐 ${is.acilis_saati} – ${is.kapanis_saati}</div>
+        <div class="td-sub">${gunler}</div>
+      </td>
+      <td>
+        <div>👥 <strong>${is.personel_sayisi}</strong> personel</div>
+        <div class="td-sub" style="color:var(--primary)">⏱️ ${is.randevu_suresi} dk / seans</div>
+      </td>
+      <td style="font-size:.82rem;color:var(--sub)">${fmt(is.olusturma_tarihi)}</td>
+      <td>
+        <button class="btn btn-danger delete-btn" data-id="${is.id}" data-ad="${escAttr(is.ad)}">🗑 Sil</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Delete butonları için tek bir event listener (delegasyon)
+  tbody.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => openModal(btn.dataset.id, btn.dataset.ad));
+  });
+}
+
+function renderCards(list) {
+  const container = document.getElementById('cardsList');
+  container.innerHTML = '';
+
+  if (list.length === 0) return;
+
+  list.forEach(is => {
+    const gunler = (is.calisma_gunleri || '').toUpperCase().split(',').join(' · ');
+    const card = document.createElement('div');
+    card.className = 'biz-card';
+    card.innerHTML = `
+      <div class="biz-card-header">
+        <div>
+          <div class="biz-card-title">${escHtml(is.ad)}</div>
+          <div style="margin-top:5px">${badge(is.kategori)}</div>
+        </div>
+      </div>
+      <div class="biz-card-body">
+        <div class="biz-card-item">
+          <span class="biz-card-key">📞 Telefon</span>
+          <span class="biz-card-val">${escHtml(is.telefon)}</span>
+        </div>
+        <div class="biz-card-item">
+          <span class="biz-card-key">🕐 Saatler</span>
+          <span class="biz-card-val">${is.acilis_saati} – ${is.kapanis_saati}</span>
+        </div>
+        <div class="biz-card-item">
+          <span class="biz-card-key">👥 Personel</span>
+          <span class="biz-card-val">${is.personel_sayisi} kişi</span>
+        </div>
+        <div class="biz-card-item">
+          <span class="biz-card-key">⏱️ Süre</span>
+          <span class="biz-card-val">${is.randevu_suresi} dk</span>
+        </div>
+        <div class="biz-card-item" style="grid-column:span 2">
+          <span class="biz-card-key">📅 Günler</span>
+          <span class="biz-card-val" style="font-size:.78rem">${gunler}</span>
+        </div>
+        <div class="biz-card-item" style="grid-column:span 2">
+          <span class="biz-card-key">📍 Adres</span>
+          <span class="biz-card-val" style="font-size:.8rem">${escHtml(is.adres)}</span>
+        </div>
+      </div>
+      <div class="biz-card-footer">
+        <button class="btn btn-danger" data-id="${is.id}" data-ad="${escAttr(is.ad)}">🗑 Sil</button>
+      </div>
+    `;
+    card.querySelector('.btn-danger').addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      openModal(btn.dataset.id, btn.dataset.ad);
+    });
+    container.appendChild(card);
+  });
+}
+
+/* ── Status mesajı ──────────────────────────────────────── */
+function showStatus(type, msg) {
+  const html = {
+    loading: `<div class="spinner"></div>`,
+    empty:   `<div class="empty-state"><div class="empty-icon">🏢</div>Kayıtlı işletme bulunamadı.</div>`,
+    error:   `<div class="empty-state"><div class="empty-icon">⚠️</div>${msg}</div>`,
+  }[type] || '';
+  document.getElementById('tableStatus').innerHTML = html;
+  document.getElementById('tableBody').innerHTML   = '';
+  document.getElementById('cardsList').innerHTML   = html;
+}
+
+/* ── Modal ──────────────────────────────────────────────── */
+function openModal(id, ad) {
+  silinecekId = id;
+  document.getElementById('modalDesc').textContent =
+    `"${ad}" işletmesini ve tüm randevularını kalıcı olarak silmek istediğinize emin misiniz?`;
+  document.getElementById('deleteModal').classList.add('open');
+}
+function closeModal() {
+  silinecekId = null;
+  document.getElementById('deleteModal').classList.remove('open');
+}
+// Modal dışına tıklayınca kapat
+document.getElementById('deleteModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+  if (!silinecekId) return;
+  const btn = document.getElementById('confirmDeleteBtn');
+  btn.textContent = '⏳ Siliniyor…';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch(`http://localhost:3000/api/isletme/${silinecekId}`, { method: 'DELETE' });
+    const data = await resp.json();
+
+    if (resp.ok) {
+      showToast('✅ ' + (data.mesaj || 'İşletme silindi.'), 'success');
+      // Yerel listeden de kaldır (yeniden fetch atma)
+      tumIsletmeler = tumIsletmeler.filter(i => String(i.id) !== String(silinecekId));
+      renderAll();
+    } else {
+      showToast('❌ ' + (data.hata || 'Silme başarısız.'), 'error');
+    }
+  } catch {
+    showToast('❌ Sunucuya bağlanılamadı.', 'error');
+  } finally {
+    btn.textContent = 'Evet, Sil';
+    btn.disabled = false;
+    closeModal();
+  }
+});
+
+/* ── Toast ──────────────────────────────────────────────── */
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `show ${type}`;
+  setTimeout(() => t.className = '', 3500);
+}
+
+/* ── XSS Koruma ─────────────────────────────────────────── */
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(str) {
+  return String(str || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/* ── Event Listeners ─────────────────────────────────────── */
+let debounce;
+document.getElementById('searchInput').addEventListener('input', () => {
+  clearTimeout(debounce);
+  debounce = setTimeout(renderAll, 200);
+});
+document.getElementById('filterKategori').addEventListener('change', renderAll);
+
+/* ── Başlat ──────────────────────────────────────────────── */
+fetchIsletmeler();
+</script>
+</body>
+</html>

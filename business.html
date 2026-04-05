@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>İşletme Kaydı – Vakitly</title>
+  <meta name="description" content="Vakitly ile işletmenizi kaydedin, çalışma saatlerinizi ve personel bilgilerinizi girin." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Renk Sistemi ─── */
+    :root {
+      --clr-bg:        #f0f7ff;
+      --clr-surface:   #ffffff;
+      --clr-primary:   #4f8ef7;
+      --clr-primary-d: #2563eb;
+      --clr-secondary: #6ee7f7;
+      --clr-accent:    #a78bfa;
+      --clr-success:   #34d399;
+      --clr-warn:      #fbbf24;
+      --clr-danger:    #f87171;
+      --clr-text:      #1e293b;
+      --clr-sub:       #64748b;
+      --clr-border:    #cbd5e1;
+      --radius:        14px;
+      --shadow:        0 8px 32px rgba(79,142,247,.12);
+      --shadow-lg:     0 20px 60px rgba(79,142,247,.18);
+      --transition:    .25s cubic-bezier(.4,0,.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--clr-bg);
+      color: var(--clr-text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── Header ─── */
+    header {
+      background: linear-gradient(135deg, #4f8ef7 0%, #818cf8 50%, #a78bfa 100%);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 4px 20px rgba(79,142,247,.3);
+    }
+    .logo {
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+    .logo span { color: #bae6fd; }
+    header p {
+      color: rgba(255,255,255,.85);
+      font-size: .875rem;
+      margin-left: auto;
+    }
+
+    /* ─── Hero Band ─── */
+    .hero {
+      background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
+      text-align: center;
+      padding: 44px 20px 36px;
+    }
+    .hero h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--clr-primary-d);
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--clr-sub);
+      font-size: 1rem;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ─── Steps Indicator ─── */
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      padding: 28px 20px 0;
+    }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--clr-border);
+      transition: color var(--transition);
+    }
+    .step.active { color: var(--clr-primary); }
+    .step.done   { color: var(--clr-success); }
+    .step-num {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      display: grid;
+      place-items: center;
+      font-size: .78rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      transition: background var(--transition), border-color var(--transition);
+    }
+    .step.active .step-num { background: var(--clr-primary); color: #fff; border-color: var(--clr-primary); }
+    .step.done   .step-num { background: var(--clr-success); color: #fff; border-color: var(--clr-success); }
+    .step-line {
+      width: 48px; height: 2px;
+      background: var(--clr-border);
+      flex-shrink: 0;
+      margin: 0 4px;
+      border-radius: 2px;
+    }
+    .step.done + .step-line { background: var(--clr-success); }
+
+    /* ─── Main Layout ─── */
+    main {
+      flex: 1;
+      max-width: 780px;
+      width: 100%;
+      margin: 32px auto 60px;
+      padding: 0 20px;
+    }
+
+    /* ─── Card ─── */
+    .card {
+      background: var(--clr-surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 36px 40px;
+      margin-bottom: 24px;
+      border: 1px solid rgba(203,213,225,.5);
+      animation: fadeUp .4s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--clr-primary-d);
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-title .icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    /* ─── Grid ─── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+    .col-span-2 { grid-column: span 2; }
+
+    /* ─── Form Elements ─── */
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    label {
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--clr-sub);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    label .req { color: var(--clr-danger); margin-left: 2px; }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--clr-border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: .95rem;
+      color: var(--clr-text);
+      background: #f8faff;
+      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--clr-primary);
+      box-shadow: 0 0 0 3px rgba(79,142,247,.15);
+      background: #fff;
+    }
+    input:hover, select:hover, textarea:hover {
+      border-color: #94a3b8;
+    }
+    textarea { resize: vertical; min-height: 90px; }
+    select { appearance: none; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 40px;
+    }
+
+    /* ─── Time Row ─── */
+    .time-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .time-row input[type="time"] { flex: 1; }
+    .time-sep {
+      font-weight: 700;
+      color: var(--clr-sub);
+      flex-shrink: 0;
+    }
+
+    /* ─── Duration Chips ─── */
+    .chip-group { display: flex; gap: 10px; flex-wrap: wrap; }
+    .chip {
+      padding: 9px 20px;
+      border-radius: 50px;
+      border: 2px solid var(--clr-border);
+      background: #f8faff;
+      font-size: .88rem;
+      font-weight: 600;
+      color: var(--clr-sub);
+      cursor: pointer;
+      transition: all var(--transition);
+      user-select: none;
+    }
+    .chip:hover { border-color: var(--clr-primary); color: var(--clr-primary); }
+    .chip.selected {
+      background: linear-gradient(135deg, #4f8ef7, #818cf8);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(79,142,247,.35);
+    }
+    input[name="randevu_suresi"] { display: none; }
+
+    /* ─── Counter Input ─── */
+    .counter {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border: 1.5px solid var(--clr-border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #f8faff;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .counter:focus-within {
+      border-color: var(--clr-primary);
+      box-shadow: 0 0 0 3px rgba(79,142,247,.15);
+    }
+    .counter button {
+      width: 44px; height: 48px;
+      border: none;
+      background: transparent;
+      font-size: 1.2rem;
+      color: var(--clr-primary);
+      cursor: pointer;
+      font-weight: 700;
+      transition: background var(--transition);
+      flex-shrink: 0;
+    }
+    .counter button:hover { background: rgba(79,142,247,.1); }
+    .counter input {
+      flex: 1;
+      border: none;
+      border-radius: 0;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 700;
+      background: transparent;
+      padding: 12px 4px;
+    }
+    .counter input:focus { box-shadow: none; background: transparent; }
+
+    /* ─── Info Box ─── */
+    .info-box {
+      background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: .875rem;
+      color: #1e40af;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      line-height: 1.55;
+    }
+    .info-box .info-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* ─── Preview Card ─── */
+    .preview-card {
+      background: linear-gradient(135deg, #f0f9ff, #e0e7ff);
+      border: 1px solid #c7d2fe;
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-top: 4px;
+    }
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .preview-item { display: flex; flex-direction: column; gap: 3px; }
+    .preview-label { font-size: .72rem; font-weight: 600; color: var(--clr-sub); text-transform: uppercase; letter-spacing: .5px; }
+    .preview-value { font-size: 1.05rem; font-weight: 700; color: var(--clr-primary-d); }
+
+    /* ─── Submit Button ─── */
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, #4f8ef7 0%, #818cf8 100%);
+      color: #fff;
+      font-family: inherit;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(79,142,247,.4);
+      transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
+      letter-spacing: .3px;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-submit::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(rgba(255,255,255,.0), rgba(255,255,255,.15));
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(79,142,247,.5); }
+    .btn-submit:hover::after { opacity: 1; }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled { filter: grayscale(.5); cursor: not-allowed; transform: none; }
+
+    /* ─── Toast ─── */
+    #toast {
+      position: fixed;
+      bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+      display: flex; align-items: center; gap: 12px;
+      font-size: .92rem; font-weight: 600;
+      transition: transform .4s cubic-bezier(.4,0,.2,1);
+      z-index: 999;
+      min-width: 280px;
+      border-left: 5px solid var(--clr-success);
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.error { border-left-color: var(--clr-danger); }
+    #toast .t-icon { font-size: 1.3rem; }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 640px) {
+      .card { padding: 24px 20px; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .col-span-2 { grid-column: span 1; }
+      .preview-grid { grid-template-columns: 1fr 1fr; }
+      header p { display: none; }
+      .hero h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── Header ─── -->
+<header>
+  <div class="logo">Vakit<span>ly</span></div>
+  <p>Randevu Yönetim Sistemi</p>
+</header>
+
+<!-- ─── Hero ─── -->
+<div class="hero">
+  <h1>🏢 İşletmenizi Kaydedin</h1>
+  <p>Çalışma saatlerinizi ve personel bilgilerinizi girerek Vakitly'ye katılın.</p>
+</div>
+
+<!-- ─── Steps ─── -->
+<div class="steps">
+  <div class="step active" id="step1">
+    <div class="step-num">1</div>
+    <span>İşletme Bilgileri</span>
+  </div>
+  <div class="step-line"></div>
+  <div class="step" id="step2">
+    <div class="step-num">2</div>
+    <span>Çalışma Saatleri</span>
+  </div>
+  <div class="step-line"></div>
+  <div class="step" id="step3">
+    <div class="step-num">3</div>
+    <span>Randevu Ayarları</span>
+  </div>
+</div>
+
+<!-- ─── Form ─── -->
+<main>
+  <form id="isletmeForm" novalidate>
+
+    <!-- Bölüm 1: Temel Bilgiler -->
+    <div class="card" style="animation-delay:.0s">
+      <div class="card-title">
+        <div class="icon" style="background:#dbeafe;">🏪</div>
+        Temel İşletme Bilgileri
+      </div>
+
+      <div class="grid-2" style="margin-bottom:18px;">
+        <div class="field">
+          <label for="ad">İşletme Adı <span class="req">*</span></label>
+          <input type="text" id="ad" name="ad" placeholder="Örn: Güzellik Salonu Zeynep" required />
+        </div>
+        <div class="field">
+          <label for="kategori">Kategori <span class="req">*</span></label>
+          <select id="kategori" name="kategori" required>
+            <option value="">— Seçiniz —</option>
+            <option value="berber">Berber / Kuaför</option>
+            <option value="guzellik">Güzellik & Cilt Bakımı</option>
+            <option value="dis">Diş Kliniği</option>
+            <option value="doktor">Doktor / Poliklinik</option>
+            <option value="spa">SPA & Masaj</option>
+            <option value="veteriner">Veteriner</option>
+            <option value="hukuk">Avukatlık / Danışmanlık</option>
+            <option value="diger">Diğer</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:18px;">
+        <div class="field">
+          <label for="telefon">Telefon Numarası <span class="req">*</span></label>
+          <input type="tel" id="telefon" name="telefon" placeholder="0532 000 00 00" required />
+        </div>
+        <div class="field">
+          <label for="email">E-posta</label>
+          <input type="email" id="email" name="email" placeholder="isletme@email.com" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="adres">Adres <span class="req">*</span></label>
+        <textarea id="adres" name="adres" placeholder="İşletmenizin tam adresini giriniz..." required></textarea>
+      </div>
+    </div>
+
+    <!-- Bölüm 2: Çalışma Saatleri -->
+    <div class="card" style="animation-delay:.08s">
+      <div class="card-title">
+        <div class="icon" style="background:#dcfce7;">🕐</div>
+        Çalışma Saatleri
+      </div>
+
+      <div class="grid-2" style="margin-bottom:18px;">
+        <div class="field">
+          <label>Açılış – Kapanış Saatleri <span class="req">*</span></label>
+          <div class="time-row">
+            <input type="time" id="acilis_saati" name="acilis_saati" value="09:00" required />
+            <span class="time-sep">→</span>
+            <input type="time" id="kapanis_saati" name="kapanis_saati" value="18:00" required />
+          </div>
+        </div>
+        <div class="field">
+          <label for="mola_baslangic">Mola Saatleri (İsteğe Bağlı)</label>
+          <div class="time-row">
+            <input type="time" id="mola_baslangic" name="mola_baslangic" placeholder="12:00" />
+            <span class="time-sep">→</span>
+            <input type="time" id="mola_bitis" name="mola_bitis" placeholder="13:00" />
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Çalışma Günleri <span class="req">*</span></label>
+        <div class="chip-group" id="gunler-group">
+          <div class="chip selected" data-gun="pzt">Pzt</div>
+          <div class="chip selected" data-gun="sal">Sal</div>
+          <div class="chip selected" data-gun="car">Çar</div>
+          <div class="chip selected" data-gun="per">Per</div>
+          <div class="chip selected" data-gun="cum">Cum</div>
+          <div class="chip" data-gun="cmt">Cmt</div>
+          <div class="chip" data-gun="paz">Paz</div>
+        </div>
+        <input type="hidden" name="calisma_gunleri" id="calisma_gunleri" value="pzt,sal,car,per,cum" />
+      </div>
+    </div>
+
+    <!-- Bölüm 3: Personel & Randevu -->
+    <div class="card" style="animation-delay:.16s">
+      <div class="card-title">
+        <div class="icon" style="background:#ede9fe;">👥</div>
+        Personel & Randevu Ayarları
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px;">
+        <div class="field">
+          <label>Personel Sayısı <span class="req">*</span></label>
+          <div class="counter">
+            <button type="button" id="btn-minus" onclick="changePersonel(-1)">−</button>
+            <input type="number" id="personel_sayisi" name="personel_sayisi" value="2" min="1" max="50" readonly />
+            <button type="button" id="btn-plus"  onclick="changePersonel(+1)">+</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="max_gunluk_randevu">Maks. Günlük Randevu (Kişi Başı)</label>
+          <input type="number" id="max_gunluk_randevu" name="max_gunluk_randevu" value="8" min="1" max="30" />
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:20px;">
+        <label>Randevu Süresi <span class="req">*</span></label>
+        <div class="chip-group" id="sure-group">
+          <div class="chip" data-sure="15">15 dk</div>
+          <div class="chip selected" data-sure="30">30 dk</div>
+          <div class="chip" data-sure="45">45 dk</div>
+          <div class="chip" data-sure="60">1 saat</div>
+          <div class="chip" data-sure="90">1,5 saat</div>
+          <div class="chip" data-sure="120">2 saat</div>
+        </div>
+        <input type="hidden" name="randevu_suresi" id="randevu_suresi" value="30" />
+      </div>
+
+      <!-- Canlı Önizleme -->
+      <div class="info-box" style="margin-bottom:20px;">
+        <span class="info-icon">💡</span>
+        <div>
+          <strong id="kapasite-text">Günlük toplam kapasite: <span id="kapasite-val">—</span> randevu</strong><br />
+          <span id="kapasite-sub" style="color:#3b82f6;">Sistemin otomatik hesapladığı bilgi</span>
+        </div>
+      </div>
+
+      <div class="preview-card">
+        <div class="preview-grid">
+          <div class="preview-item">
+            <span class="preview-label">Çalışma Saatleri</span>
+            <span class="preview-value" id="prev-saat">09:00 – 18:00</span>
+          </div>
+          <div class="preview-item">
+            <span class="preview-label">Personel</span>
+            <span class="preview-value" id="prev-personel">2 kişi</span>
+          </div>
+          <div class="preview-item">
+            <span class="preview-label">Randevu Süresi</span>
+            <span class="preview-value" id="prev-sure">30 dk</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gönder -->
+    <button type="submit" class="btn-submit" id="submitBtn">
+      ✅ İşletmeyi Kaydet
+    </button>
+
+  </form>
+</main>
+
+<!-- ─── Toast ─── -->
+<div id="toast">
+  <span class="t-icon" id="toastIcon">✅</span>
+  <span id="toastMsg">İşletme başarıyla kaydedildi!</span>
+</div>
+
+<script>
+/* ── Gün Seçici ─────────────────────────────────────────── */
+document.querySelectorAll('#gunler-group .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    chip.classList.toggle('selected');
+    const secili = [...document.querySelectorAll('#gunler-group .chip.selected')]
+      .map(c => c.dataset.gun).join(',');
+    document.getElementById('calisma_gunleri').value = secili;
+  });
+});
+
+/* ── Randevu Süresi Seçici ──────────────────────────────── */
+document.querySelectorAll('#sure-group .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#sure-group .chip').forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
+    document.getElementById('randevu_suresi').value = chip.dataset.sure;
+    updatePreview();
+    updateKapasite();
+  });
+});
+
+/* ── Personel Sayacı ────────────────────────────────────── */
+function changePersonel(delta) {
+  const inp = document.getElementById('personel_sayisi');
+  const yeni = Math.min(50, Math.max(1, parseInt(inp.value) + delta));
+  inp.value = yeni;
+  document.getElementById('prev-personel').textContent = yeni + ' kişi';
+  updateKapasite();
+}
+
+/* ── Saatleri dinle ─────────────────────────────────────── */
+['acilis_saati','kapanis_saati'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => { updatePreview(); updateKapasite(); });
+});
+
+/* ── Önizleme Güncelle ──────────────────────────────────── */
+function updatePreview() {
+  const a = document.getElementById('acilis_saati').value;
+  const k = document.getElementById('kapanis_saati').value;
+  document.getElementById('prev-saat').textContent = `${a} – ${k}`;
+
+  const sure = parseInt(document.getElementById('randevu_suresi').value);
+  document.getElementById('prev-sure').textContent =
+    sure < 60 ? `${sure} dk` : sure === 60 ? '1 saat' : sure === 90 ? '1,5 saat' : '2 saat';
+}
+
+/* ── Kapasite Hesapla ───────────────────────────────────── */
+function updateKapasite() {
+  const a = document.getElementById('acilis_saati').value;
+  const k = document.getElementById('kapanis_saati').value;
+  const sure = parseInt(document.getElementById('randevu_suresi').value);
+  const personel = parseInt(document.getElementById('personel_sayisi').value);
+
+  if (!a || !k || isNaN(sure) || isNaN(personel)) return;
+
+  const [ah, am] = a.split(':').map(Number);
+  const [kh, km] = k.split(':').map(Number);
+  const toplamDakika = (kh * 60 + km) - (ah * 60 + am);
+
+  if (toplamDakika <= 0 || sure <= 0) {
+    document.getElementById('kapasite-val').textContent = '—';
+    return;
+  }
+
+  const slotSayisi = Math.floor(toplamDakika / sure);
+  const toplamKapasite = slotSayisi * personel;
+
+  document.getElementById('kapasite-val').textContent = toplamKapasite;
+  document.getElementById('kapasite-sub').textContent =
+    `${personel} personel × ${slotSayisi} slot (her ${sure} dk) = ${toplamKapasite} randevu`;
+}
+
+/* ── Toast ──────────────────────────────────────────────── */
+function showToast(msg, isError = false) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  document.getElementById('toastIcon').textContent = isError ? '❌' : '✅';
+  toast.classList.toggle('error', isError);
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3800);
+}
+
+/* ── Form Gönder ─────────────────────────────────────────── */
+document.getElementById('isletmeForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const btn = document.getElementById('submitBtn');
+
+  // Basit doğrulama
+  const zorunlu = ['ad', 'kategori', 'telefon', 'adres', 'acilis_saati', 'kapanis_saati'];
+  for (const id of zorunlu) {
+    if (!document.getElementById(id).value.trim()) {
+      document.getElementById(id).focus();
+      showToast(`"${document.getElementById(id).previousElementSibling?.textContent?.replace(' *','') || id}" alanı zorunlu!`, true);
+      return;
+    }
+  }
+  if (!document.getElementById('calisma_gunleri').value) {
+    showToast('Lütfen en az bir çalışma günü seçin!', true);
+    return;
+  }
+
+  // Veri Topla
+  const veri = {
+    ad:               document.getElementById('ad').value.trim(),
+    kategori:         document.getElementById('kategori').value,
+    adres:            document.getElementById('adres').value.trim(),
+    telefon:          document.getElementById('telefon').value.trim(),
+    email:            document.getElementById('email').value.trim(),
+    acilis_saati:     document.getElementById('acilis_saati').value,
+    kapanis_saati:    document.getElementById('kapanis_saati').value,
+    mola_baslangic:   document.getElementById('mola_baslangic').value || null,
+    mola_bitis:       document.getElementById('mola_bitis').value || null,
+    calisma_gunleri:  document.getElementById('calisma_gunleri').value,
+    personel_sayisi:  parseInt(document.getElementById('personel_sayisi').value),
+    randevu_suresi:   parseInt(document.getElementById('randevu_suresi').value),
+    max_gunluk_randevu: parseInt(document.getElementById('max_gunluk_randevu').value),
+  };
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Kaydediliyor...';
+
+  try {
+    const resp = await fetch('http://localhost:3000/api/isletme-ekle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(veri)
+    });
+    const json = await resp.json();
+
+    if (resp.ok) {
+      showToast(json.mesaj || 'İşletme başarıyla kaydedildi!');
+      // Adım göstergesini güncelle
+      document.getElementById('step1').classList.replace('active','done');
+      document.getElementById('step2').classList.add('done');
+      document.getElementById('step3').classList.add('done');
+      // Formu sıfırla
+      setTimeout(() => {
+        document.getElementById('isletmeForm').reset();
+        document.getElementById('personel_sayisi').value = 2;
+        document.querySelectorAll('#gunler-group .chip').forEach((c,i) => c.classList.toggle('selected', i < 5));
+        document.querySelectorAll('#sure-group .chip').forEach((c,i) => c.classList.toggle('selected', c.dataset.sure === '30'));
+        document.getElementById('calisma_gunleri').value = 'pzt,sal,car,per,cum';
+        document.getElementById('randevu_suresi').value = '30';
+        updatePreview(); updateKapasite();
+        ['step1','step2','step3'].forEach((id,i) => {
+          document.getElementById(id).classList.remove('done');
+          if (i === 0) document.getElementById(id).classList.add('active');
+        });
+        btn.disabled = false;
+        btn.textContent = '✅ İşletmeyi Kaydet';
+      }, 2500);
+    } else {
+      showToast(json.hata || 'Bir hata oluştu.', true);
+      btn.disabled = false;
+      btn.textContent = '✅ İşletmeyi Kaydet';
+    }
+  } catch (err) {
+    showToast('Sunucuya bağlanılamadı. Lütfen server.js çalıştığından emin olun.', true);
+    btn.disabled = false;
+    btn.textContent = '✅ İşletmeyi Kaydet';
+  }
+});
+
+/* ── Başlangıçta Hesapla ─────────────────────────────────── */
+updatePreview();
+updateKapasite();
+</script>
+</body>
+</html>
