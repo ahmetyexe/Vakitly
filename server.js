@@ -61,17 +61,92 @@ function initDB() {
             CREATE TABLE IF NOT EXISTS randevular (
                 id               INTEGER PRIMARY KEY AUTOINCREMENT,
                 isletme_id       INTEGER NOT NULL,
+                personel_id      INTEGER,
                 musteri_ad       TEXT    NOT NULL,
                 musteri_telefon  TEXT    NOT NULL,
                 randevu_tarihi   TEXT    NOT NULL,
                 randevu_saati    TEXT    NOT NULL,
+                hizmet_id        INTEGER,
                 durum            TEXT    NOT NULL DEFAULT 'bekliyor',
                 olusturma_tarihi TEXT             DEFAULT (datetime('now','localtime')),
-                FOREIGN KEY (isletme_id) REFERENCES isletmeler(id) ON DELETE CASCADE
+                FOREIGN KEY (isletme_id) REFERENCES isletmeler(id) ON DELETE CASCADE,
+                FOREIGN KEY (personel_id) REFERENCES personeller(id) ON DELETE SET NULL,
+                FOREIGN KEY (hizmet_id) REFERENCES hizmetler(id) ON DELETE SET NULL
             )
         `, (err) => {
             if (err) console.error('❌ randevular tablo hatası:', err.message);
             else     console.log('📅 randevular tablosu hazır.');
+        });
+
+        // ── Hizmetler tablosu ───────────────────────────
+        db.run(`
+            CREATE TABLE IF NOT EXISTS hizmetler (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                isletme_id      INTEGER NOT NULL,
+                ad              TEXT    NOT NULL,
+                min_sure        INTEGER NOT NULL DEFAULT 15,
+                aciklama        TEXT,
+                olusturma_tarihi TEXT    DEFAULT (datetime('now','localtime')),
+                FOREIGN KEY (isletme_id) REFERENCES isletmeler(id) ON DELETE CASCADE,
+                UNIQUE(isletme_id, ad)
+            )
+        `, (err) => {
+            if (err) console.error('❌ hizmetler tablo hatası:', err.message);
+            else     console.log('🛎️ hizmetler tablosu hazır.');
+        });
+
+        // ── Çalışma Saatleri tablosu ─────────────────────
+        db.run(`
+            CREATE TABLE IF NOT EXISTS calisma_saatleri (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                isletme_id      INTEGER NOT NULL,
+                gun             TEXT    NOT NULL,
+                acilis_saati    TEXT    NOT NULL,
+                kapanis_saati   TEXT    NOT NULL,
+                acik_mi         BOOLEAN DEFAULT 1,
+                olusturma_tarihi TEXT    DEFAULT (datetime('now','localtime')),
+                FOREIGN KEY (isletme_id) REFERENCES isletmeler(id) ON DELETE CASCADE,
+                UNIQUE(isletme_id, gun)
+            )
+        `, (err) => {
+            if (err) console.error('❌ calisma_saatleri tablo hatası:', err.message);
+            else     console.log('⏰ calisma_saatleri tablosu hazır.');
+        });
+
+        // ── Molalar tablosu ──────────────────────────────
+        db.run(`
+            CREATE TABLE IF NOT EXISTS molalar (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                isletme_id      INTEGER NOT NULL,
+                gun             TEXT,
+                baslangic_saati TEXT    NOT NULL,
+                bitis_saati     TEXT    NOT NULL,
+                olusturma_tarihi TEXT    DEFAULT (datetime('now','localtime')),
+                FOREIGN KEY (isletme_id) REFERENCES isletmeler(id) ON DELETE CASCADE
+            )
+        `, (err) => {
+            if (err) console.error('❌ molalar tablo hatası:', err.message);
+            else     console.log('☕ molalar tablosu hazır.');
+        });
+
+        // ── Personeller tablosu ──────────────────────────
+        db.run(`
+            CREATE TABLE IF NOT EXISTS personeller (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                isletme_id      INTEGER NOT NULL,
+                ad              TEXT    NOT NULL,
+                telefon         TEXT,
+                email           TEXT,
+                uzmanlik        TEXT,
+                calisma_gunleri TEXT    DEFAULT 'pzt,sal,car,per,cum',
+                acik_mi         BOOLEAN DEFAULT 1,
+                olusturma_tarihi TEXT    DEFAULT (datetime('now','localtime')),
+                FOREIGN KEY (isletme_id) REFERENCES isletmeler(id) ON DELETE CASCADE,
+                UNIQUE(isletme_id, ad)
+            )
+        `, (err) => {
+            if (err) console.error('❌ personeller tablo hatası:', err.message);
+            else     console.log('👤 personeller tablosu hazır.');
         });
     });
 }
@@ -377,6 +452,529 @@ app.delete('/api/isletme/:id', (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════
+//  API: HİZMET EKLE  (POST /api/hizmet-ekle)
+// ══════════════════════════════════════════════════════════
+app.post('/api/hizmet-ekle', (req, res) => {
+    const { isletme_id, ad, min_sure, aciklama } = req.body;
+
+    // Validasyon
+    if (!isletme_id || !ad || !min_sure) {
+        return res.status(400).json({ hata: 'İşletme ID, hizmet adı ve minimum süresi zorunludur.' });
+    }
+
+    const sure = Number(min_sure);
+    if (isNaN(sure) || sure < 15) {
+        return res.status(400).json({ hata: 'Minimum süresi en az 15 dakika olmalıdır.' });
+    }
+
+    const sql = `
+        INSERT INTO hizmetler (isletme_id, ad, min_sure, aciklama)
+        VALUES (?, ?, ?, ?)
+    `;
+
+    db.run(sql, [isletme_id, ad.trim(), sure, aciklama || null], function (err) {
+        if (err) {
+            if (err.message.includes('UNIQUE constraint')) {
+                return res.status(409).json({ hata: 'Bu hizmet zaten mevcut.' });
+            }
+            console.error('❌ Hizmet ekleme hatası:', err.message);
+            return res.status(500).json({ hata: 'Hizmet eklenemedi.' });
+        }
+
+        console.log(`✅ Hizmet eklendi → ID: ${this.lastID} | ${ad}`);
+        res.status(201).json({
+            mesaj: '✅ Hizmet başarıyla eklendi.',
+            hizmetId: this.lastID,
+        });
+    });
+});
+
+// ══════════════════════════════════════════════════════════
+//  API: MOLA EKLE  (POST /api/mola-ekle)
+// ══════════════════════════════════════════════════════════
+app.post('/api/mola-ekle', (req, res) => {
+    const { isletme_id, gun, baslangic_saati, bitis_saati } = req.body;
+
+    // Validasyon
+    if (!isletme_id || !baslangic_saati || !bitis_saati) {
+        return res.status(400).json({ hata: 'İşletme ID, başlangıç ve bitiş saati zorunludur.' });
+    }
+
+    if (!gecerliSaat(baslangic_saati) || !gecerliSaat(bitis_saati)) {
+        return res.status(400).json({ hata: 'Geçerli saat formatı: HH:MM' });
+    }
+
+    if (saatFarki(baslangic_saati, bitis_saati) <= 0) {
+        return res.status(400).json({ hata: 'Bitiş saati başlangıçtan sonra olmalıdır.' });
+    }
+
+    const sql = `
+        INSERT INTO molalar (isletme_id, gun, baslangic_saati, bitis_saati)
+        VALUES (?, ?, ?, ?)
+    `;
+
+    db.run(sql, [isletme_id, gun || null, baslangic_saati, bitis_saati], function (err) {
+        if (err) {
+            console.error('❌ Mola ekleme hatası:', err.message);
+            return res.status(500).json({ hata: 'Mola eklenemedi.' });
+        }
+
+        console.log(`✅ Mola eklendi → ID: ${this.lastID}`);
+        res.status(201).json({
+            mesaj: '✅ Mola başarıyla eklendi.',
+            molaId: this.lastID,
+        });
+    });
+});
+
+// ══════════════════════════════════════════════════════════
+//  API: ÇALIŞMA SAATİ EKLE  (POST /api/calisma-saati-ekle)
+// ══════════════════════════════════════════════════════════
+app.post('/api/calisma-saati-ekle', (req, res) => {
+    const { isletme_id, gun, acilis_saati, kapanis_saati, acik_mi } = req.body;
+
+    // Validasyon
+    if (!isletme_id || !gun || !acilis_saati || !kapanis_saati) {
+        return res.status(400).json({ hata: 'İşletme ID, gün, açılış ve kapanış saati zorunludur.' });
+    }
+
+    if (!GECERLI_GUNLER.includes(gun)) {
+        return res.status(400).json({ hata: 'Geçersiz gün: ' + gun });
+    }
+
+    if (!gecerliSaat(acilis_saati) || !gecerliSaat(kapanis_saati)) {
+        return res.status(400).json({ hata: 'Geçerli saat formatı: HH:MM' });
+    }
+
+    if (saatFarki(acilis_saati, kapanis_saati) <= 0) {
+        return res.status(400).json({ hata: 'Kapanış saati açılıştan sonra olmalıdır.' });
+    }
+
+    const sql = `
+        INSERT OR REPLACE INTO calisma_saatleri 
+            (isletme_id, gun, acilis_saati, kapanis_saati, acik_mi)
+        VALUES (?, ?, ?, ?, ?)
+    `;
+
+    const acikMi = acik_mi === false ? 0 : 1;
+
+    db.run(sql, [isletme_id, gun, acilis_saati, kapanis_saati, acikMi], function (err) {
+        if (err) {
+            console.error('❌ Çalışma saati ekleme hatası:', err.message);
+            return res.status(500).json({ hata: 'Çalışma saati eklenemedi.' });
+        }
+
+        console.log(`✅ Çalışma saati eklendi → ${gun} | ${acilis_saati}-${kapanis_saati}`);
+        res.status(201).json({
+            mesaj: '✅ Çalışma saati başarıyla eklendi.',
+        });
+    });
+});
+
+// ══════════════════════════════════════════════════════════
+//  API: HİZMETLERİ GETIR  (GET /api/isletme/:id/hizmetler)
+// ══════════════════════════════════════════════════════════
+app.get('/api/isletme/:id/hizmetler', (req, res) => {
+    const id = Number(req.params.id);
+    if (isNaN(id) || id < 1)
+        return res.status(400).json({ hata: 'Geçersiz işletme ID.' });
+
+    db.all('SELECT * FROM hizmetler WHERE isletme_id = ? ORDER BY ad', [id], (err, rows) => {
+        if (err) {
+            console.error('❌ Hizmetler listeleme hatası:', err.message);
+            return res.status(500).json({ hata: 'Hizmetler listelenemedi.' });
+        }
+        res.json({ toplam: rows.length, hizmetler: rows });
+    });
+});
+
+// ══════════════════════════════════════════════════════════
+//  API: MOLALARI GETIR  (GET /api/isletme/:id/molalar)
+// ══════════════════════════════════════════════════════════
+app.get('/api/isletme/:id/molalar', (req, res) => {
+    const id = Number(req.params.id);
+    if (isNaN(id) || id < 1)
+        return res.status(400).json({ hata: 'Geçersiz işletme ID.' });
+
+    db.all('SELECT * FROM molalar WHERE isletme_id = ? ORDER BY gun, baslangic_saati', [id], (err, rows) => {
+        if (err) {
+            console.error('❌ Molalar listeleme hatası:', err.message);
+            return res.status(500).json({ hata: 'Molalar listelenemedi.' });
+        }
+        res.json({ toplam: rows.length, molalar: rows });
+    });
+});
+
+// ══════════════════════════════════════════════════════════
+//  API: ÇALIŞMA SAATLERİNİ GETIR  (GET /api/isletme/:id/calisma-saatleri)
+// ══════════════════════════════════════════════════════════
+app.get('/api/isletme/:id/calisma-saatleri', (req, res) => {
+    const id = Number(req.params.id);
+    if (isNaN(id) || id < 1)
+        return res.status(400).json({ hata: 'Geçersiz işletme ID.' });
+
+    db.all('SELECT * FROM calisma_saatleri WHERE isletme_id = ? ORDER BY gun', [id], (err, rows) => {
+        if (err) {
+            console.error('❌ Çalışma saatleri listeleme hatası:', err.message);
+            return res.status(500).json({ hata: 'Çalışma saatleri listelenemedi.' });
+        }
+        res.json({ toplam: rows.length, calisma_saatleri: rows });
+    });
+});
+
+// ══════════════════════════════════════════════════════════
+//  YARDIMCI: RANDEVU SLOT HESAPLAMA VE KONTROL
+// ══════════════════════════════════════════════════════════
+/**
+ * Verilen tarih ve işletme için müsait slotları hesapla (personellere göre)
+ * @param {number} isletmeId - İşletme ID
+ * @param {string} tarih - Tarih (YYYY-MM-DD)
+ * @param {number} hizmetId - Hizmet ID (minimum süreyi almak için)
+ * @param {Function} callback - (err, slots) slots = [{saat, personeller: [{id, ad, musaitlik}]}]
+ */
+function hesaplaMusaitSlotlar(isletmeId, tarih, hizmetId, callback) {
+    // Tarihin gün adını bul (0=paz, 1=pzt, ...)
+    const gunAdlari = ['paz', 'pzt', 'sal', 'car', 'per', 'cum', 'cmt'];
+    const date = new Date(tarih);
+    const gunKodu = gunAdlari[date.getDay()];
+
+    // 1. İşletmenin o gün açık olup olmadığını kontrol et
+    db.get(`
+        SELECT * FROM calisma_saatleri 
+        WHERE isletme_id = ? AND gun = ?
+    `, [isletmeId, gunKodu], (err, calismaRow) => {
+        if (err) return callback(err);
+
+        if (!calismaRow || !calismaRow.acik_mi) {
+            return callback(null, []); // Kapalı gün
+        }
+
+        // 2. Hizmetin minimum süresini al
+        let minSure = 30; // Varsayılan
+        if (hizmetId) {
+            db.get('SELECT min_sure FROM hizmetler WHERE id = ?', [hizmetId], (err, hizmetRow) => {
+                if (!err && hizmetRow) {
+                    minSure = hizmetRow.min_sure;
+                }
+                devamEt();
+            });
+        } else {
+            devamEt();
+        }
+
+        function devamEt() {
+            // 3. Personelleri al
+            db.all('SELECT * FROM personeller WHERE isletme_id = ? AND acik_mi = 1 ORDER BY ad', 
+                [isletmeId], (err, personeller) => {
+                    if (err) return callback(err);
+
+                    // 4. Molalar
+                    db.all(`
+                        SELECT baslangic_saati, bitis_saati FROM molalar 
+                        WHERE isletme_id = ? AND (gun IS NULL OR gun = ?)
+                    `, [isletmeId, gunKodu], (err, molalar) => {
+                        if (err) return callback(err);
+
+                        // 5. O gün randevular (personel bazında)
+                        db.all(`
+                            SELECT personel_id, randevu_saati FROM randevular 
+                            WHERE isletme_id = ? AND randevu_tarihi = ? AND durum != 'iptal'
+                        `, [isletmeId, tarih], (err, randevular) => {
+                            if (err) return callback(err);
+
+                            // Slotları hesapla
+                            const slots = [];
+                            const [basAc, basAm] = calismaRow.acilis_saati.split(':').map(Number);
+                            const [sonKap, sonKapm] = calismaRow.kapanis_saati.split(':').map(Number);
+
+                            let currentMinutes = basAc * 60 + basAm;
+                            const endMinutes = sonKap * 60 + sonKapm;
+
+                            while (currentMinutes + minSure <= endMinutes) {
+                                const h = Math.floor(currentMinutes / 60);
+                                const m = currentMinutes % 60;
+                                const slotStart = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+
+                                // Mola kontrolü
+                                let molada = false;
+                                for (const mola of molalar) {
+                                    const molaBasDak = parseInt(mola.baslangic_saati.split(':')[0]) * 60 + parseInt(mola.baslangic_saati.split(':')[1]);
+                                    const molaBitDak = parseInt(mola.bitis_saati.split(':')[0]) * 60 + parseInt(mola.bitis_saati.split(':')[1]);
+
+                                    if (currentMinutes < molaBitDak && currentMinutes + minSure > molaBasDak) {
+                                        molada = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!molada) {
+                                    // Bu saat için personellerin müsaitliğini hesapla
+                                    const slotPersoneller = [];
+
+                                    for (const personel of personeller) {
+                                        // Personel o gün çalışıyor mu?
+                                        const personelGunleri = (personel.calisma_gunleri || '').split(',').map(g => g.trim());
+                                        if (!personelGunleri.includes(gunKodu)) {
+                                            continue; // Personel o gün çalışmıyor
+                                        }
+
+                                        // Personelin o saat aralığında randevusu var mı?
+                                        let personelRandevuSayisi = 0;
+                                        for (const rv of randevular) {
+                                            if (rv.personel_id === personel.id) {
+                                                const [rvH, rvM] = rv.randevu_saati.split(':').map(Number);
+                                                const rvDak = rvH * 60 + rvM;
+
+                                                if (rvDak >= currentMinutes && rvDak < currentMinutes + minSure) {
+                                                    personelRandevuSayisi++;
+                                                }
+                                            }
+                                        }
+
+                                        // Personel sadece birden fazla randevuya sahip olamaz
+                                        if (personelRandevuSayisi === 0) {
+                                            slotPersoneller.push({
+                                                id: personel.id,
+                                                ad: personel.ad,
+                                                uzmanlik: personel.uzmanlik,
+                                            });
+                                        }
+                                    }
+
+                                    // Eğer müsait personel varsa, slotu listeye ekle
+                                    if (slotPersoneller.length > 0) {
+                                        slots.push({
+                                            saat: slotStart,
+                                            personeller: slotPersoneller,
+                                            kaynakMusaitlik: slotPersoneller.length,
+                                        });
+                                    }
+                                }
+
+                                currentMinutes += minSure;
+                            }
+
+                            callback(null, slots);
+                        });
+                    });
+                });
+        }
+    });
+}
+
+// ══════════════════════════════════════════════════════════
+//  API: SLOT HESAPLA  (POST /api/slot-hesapla)
+// ══════════════════════════════════════════════════════════
+app.post('/api/slot-hesapla', (req, res) => {
+    const { isletme_id, tarih, hizmet_id } = req.body;
+
+    if (!isletme_id || !tarih) {
+        return res.status(400).json({ hata: 'İşletme ID ve tarih zorunludur.' });
+    }
+
+    hesaplaMusaitSlotlar(isletme_id, tarih, hizmet_id, (err, slots) => {
+        if (err) {
+            console.error('❌ Slot hesaplama hatası:', err.message);
+            return res.status(500).json({ hata: 'Slotlar hesaplanamadı.' });
+        }
+
+        res.json({
+            tarih,
+            slotSayisi: slots.length,
+            slotlar: slots,
+        });
+    });
+});
+
+// ══════════════════════════════════════════════════════════
+//  API: RANDEVU OLUŞTUR  (POST /api/randevu-olustur)
+// ══════════════════════════════════════════════════════════
+app.post('/api/randevu-olustur', (req, res) => {
+    const { isletme_id, personel_id, musteri_ad, musteri_telefon, tarih, saat, hizmet_id } = req.body;
+
+    if (!isletme_id || !musteri_ad || !musteri_telefon || !tarih || !saat) {
+        return res.status(400).json({ hata: 'Eksik alanlar: müşteri adı, telefon, tarih veya saat.' });
+    }
+
+    // Müşteri ad/telfonun boş olmadığını kontrol et
+    if (musteri_ad.trim().length < 2) {
+        return res.status(400).json({ hata: 'Müşteri adı en az 2 karakter olmalıdır.' });
+    }
+
+    if (!gecerliTelefon(musteri_telefon)) {
+        return res.status(400).json({ hata: 'Geçerli bir telefon numarası giriniz.' });
+    }
+
+    // Slot'un müsait olup olmadığını kontrol et
+    hesaplaMusaitSlotlar(isletme_id, tarih, hizmet_id, (err, slots) => {
+        if (err) {
+            console.error('❌ Slot kontrol hatası:', err.message);
+            return res.status(500).json({ hata: 'Slot kontrolü başarısız.' });
+        }
+
+        const slotMevcutMu = slots.some(s => s.saat === saat);
+        if (!slotMevcutMu) {
+            return res.status(409).json({ hata: 'Seçilen saat müsait değil veya kapasite dolu.' });
+        }
+
+        // Personel kontrolü
+        if (personel_id) {
+            db.get('SELECT * FROM personeller WHERE id = ? AND isletme_id = ?', 
+                [personel_id, isletme_id], (err, personel) => {
+                    if (!personel) {
+                        return res.status(404).json({ hata: 'Personel bulunamadı.' });
+                    }
+                    kaydEt();
+            });
+        } else {
+            kaydEt();
+        }
+
+        function kaydEt() {
+            // Randevuyu kayıt et
+            const sql = `
+                INSERT INTO randevular
+                    (isletme_id, personel_id, musteri_ad, musteri_telefon, randevu_tarihi, randevu_saati, hizmet_id, durum)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'onaylandi')
+            `;
+
+            db.run(sql, [isletme_id, personel_id || null, musteri_ad.trim(), musteri_telefon.trim(), tarih, saat, hizmet_id || null], function (err) {
+                if (err) {
+                    console.error('❌ Randevu ekleme hatası:', err.message);
+                    return res.status(500).json({ hata: 'Randevu oluşturulamadı.' });
+                }
+
+                console.log(`✅ Randevu oluşturuldu → ID: ${this.lastID}`);
+                res.status(201).json({
+                    mesaj: '✅ Randevu başarıyla oluşturuldu!',
+                    randevuId: this.lastID,
+                });
+            });
+        }
+    });
+});
+
+// ══════════════════════════════════════════════════════════
+//  API: PERSONEL EKLE  (POST /api/personel-ekle)
+// ══════════════════════════════════════════════════════════
+app.post('/api/personel-ekle', (req, res) => {
+    const { isletme_id, ad, telefon, email, uzmanlik, calisma_gunleri } = req.body;
+
+    if (!isletme_id || !ad) {
+        return res.status(400).json({ hata: 'İşletme ID ve personel adı zorunludur.' });
+    }
+
+    if (ad.trim().length < 2) {
+        return res.status(400).json({ hata: 'Personel adı en az 2 karakter olmalıdır.' });
+    }
+
+    if (email && !gecerliEmail(email)) {
+        return res.status(400).json({ hata: 'Geçerli bir e-posta adresi giriniz.' });
+    }
+
+    const sql = `
+        INSERT INTO personeller (isletme_id, ad, telefon, email, uzmanlik, calisma_gunleri)
+        VALUES (?, ?, ?, ?, ?, ?)
+    `;
+
+    db.run(sql, [isletme_id, ad.trim(), telefon || null, email || null, uzmanlik || null, calisma_gunleri || 'pzt,sal,car,per,cum'], 
+        function (err) {
+            if (err) {
+                if (err.message.includes('UNIQUE constraint')) {
+                    return res.status(409).json({ hata: 'Bu personel zaten mevcut.' });
+                }
+                console.error('❌ Personel ekleme hatası:', err.message);
+                return res.status(500).json({ hata: 'Personel eklenemedi.' });
+            }
+
+            console.log(`✅ Personel eklendi → ID: ${this.lastID} | ${ad}`);
+            res.status(201).json({
+                mesaj: '✅ Personel başarıyla eklendi.',
+                personelId: this.lastID,
+            });
+        }
+    );
+});
+
+// ══════════════════════════════════════════════════════════
+//  API: PERSONELLERI GETIR  (GET /api/isletme/:id/personeller)
+// ══════════════════════════════════════════════════════════
+app.get('/api/isletme/:id/personeller', (req, res) => {
+    const id = Number(req.params.id);
+    if (isNaN(id) || id < 1)
+        return res.status(400).json({ hata: 'Geçersiz işletme ID.' });
+
+    db.all('SELECT * FROM personeller WHERE isletme_id = ? ORDER BY ad', [id], (err, rows) => {
+        if (err) {
+            console.error('❌ Personeller listeleme hatası:', err.message);
+            return res.status(500).json({ hata: 'Personeller listelenemedi.' });
+        }
+        res.json({ toplam: rows.length, personeller: rows });
+    });
+});
+
+// ══════════════════════════════════════════════════════════
+//  API: PERSONEL GÜNCELLE  (PUT /api/personel/:id)
+// ══════════════════════════════════════════════════════════
+app.put('/api/personel/:id', (req, res) => {
+    const id = Number(req.params.id);
+    if (isNaN(id) || id < 1)
+        return res.status(400).json({ hata: 'Geçersiz personel ID.' });
+
+    const { ad, telefon, email, uzmanlik, calisma_gunleri, acik_mi } = req.body;
+
+    if (!ad || ad.trim().length < 2) {
+        return res.status(400).json({ hata: 'Personel adı en az 2 karakter olmalıdır.' });
+    }
+
+    if (email && !gecerliEmail(email)) {
+        return res.status(400).json({ hata: 'Geçerli bir e-posta adresi giriniz.' });
+    }
+
+    const sql = `
+        UPDATE personeller SET
+            ad = ?, telefon = ?, email = ?, uzmanlik = ?, calisma_gunleri = ?, acik_mi = ?
+        WHERE id = ?
+    `;
+
+    const acikMi = acik_mi === false ? 0 : 1;
+    db.run(sql, [ad.trim(), telefon || null, email || null, uzmanlik || null, calisma_gunleri || 'pzt,sal,car,per,cum', acikMi, id], 
+        function (err) {
+            if (err) {
+                console.error('❌ Personel güncelleme hatası:', err.message);
+                return res.status(500).json({ hata: 'Personel güncellenemedi.' });
+            }
+            if (this.changes === 0)
+                return res.status(404).json({ hata: 'Personel bulunamadı.' });
+
+            console.log(`📝 Personel güncellendi → ID: ${id}`);
+            res.json({ mesaj: '✅ Personel başarıyla güncellendi.' });
+        }
+    );
+});
+
+// ══════════════════════════════════════════════════════════
+//  API: PERSONEL SİL  (DELETE /api/personel/:id)
+// ══════════════════════════════════════════════════════════
+app.delete('/api/personel/:id', (req, res) => {
+    const id = Number(req.params.id);
+    if (isNaN(id) || id < 1)
+        return res.status(400).json({ hata: 'Geçersiz personel ID.' });
+
+    db.run('DELETE FROM personeller WHERE id = ?', [id], function (err) {
+        if (err) {
+            console.error('❌ Personel silme hatası:', err.message);
+            return res.status(500).json({ hata: 'Personel silinemedi.' });
+        }
+        if (this.changes === 0)
+            return res.status(404).json({ hata: 'Personel bulunamadı.' });
+
+        console.log(`🗑️ Personel silindi → ID: ${id}`);
+        res.json({ mesaj: '✅ Personel başarıyla silindi.' });
+    });
+});
+
+// ══════════════════════════════════════════════════════════
 //  404 Yakalayıcı (tanımsız endpoint'ler için)
 // ══════════════════════════════════════════════════════════
 app.use((req, res) => {
@@ -390,9 +988,32 @@ app.listen(PORT, () => {
     console.log(`\n🚀 Vakitly çalışıyor  →  http://localhost:${PORT}`);
     console.log(`📋 Kayıt formu        →  http://localhost:${PORT}/business.html\n`);
     console.log('Mevcut Endpoint\'ler:');
-    console.log('  POST   /api/isletme-ekle');
-    console.log('  GET    /api/isletmeler?q=&kategori=');
-    console.log('  GET    /api/isletme/:id');
-    console.log('  PUT    /api/isletme/:id');
-    console.log('  DELETE /api/isletme/:id\n');
+    console.log('  POSTİŞLETME:');
+    console.log('    POST   /api/isletme-ekle');
+    console.log('    GET    /api/isletmeler?q=&kategori=');
+    console.log('    GET    /api/isletme/:id');
+    console.log('    PUT    /api/isletme/:id');
+    console.log('    DELETE /api/isletme/:id');
+    console.log('');
+    console.log('  HİZMETLER:');
+    console.log('    POST   /api/hizmet-ekle');
+    console.log('    GET    /api/isletme/:id/hizmetler');
+    console.log('');
+    console.log('  ÇALIŞMA SAATLERİ:');
+    console.log('    POST   /api/calisma-saati-ekle');
+    console.log('    GET    /api/isletme/:id/calisma-saatleri');
+    console.log('');
+    console.log('  MOLALAR:');
+    console.log('    POST   /api/mola-ekle');
+    console.log('    GET    /api/isletme/:id/molalar');
+    console.log('');
+    console.log('  PERSONELLER:');
+    console.log('    POST   /api/personel-ekle');
+    console.log('    GET    /api/isletme/:id/personeller');
+    console.log('    PUT    /api/personel/:id');
+    console.log('    DELETE /api/personel/:id');
+    console.log('');
+    console.log('  RANDEVULAR:');
+    console.log('    POST   /api/slot-hesapla');
+    console.log('    POST   /api/randevu-olustur\n');
 });

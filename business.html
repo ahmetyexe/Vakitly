@@ -464,7 +464,7 @@
 
       <div class="grid-2" style="margin-bottom:18px;">
         <div class="field">
-          <label>Açılış – Kapanış Saatleri <span class="req">*</span></label>
+          <label>Açılış – Kapanış Saatleri (Varsayılan) <span class="req">*</span></label>
           <div class="time-row">
             <input type="time" id="acilis_saati" name="acilis_saati" value="09:00" required />
             <span class="time-sep">→</span>
@@ -472,7 +472,7 @@
           </div>
         </div>
         <div class="field">
-          <label for="mola_baslangic">Mola Saatleri (İsteğe Bağlı)</label>
+          <label for="mola_baslangic">Mola Saatleri (Varsayılan, İsteğe Bağlı)</label>
           <div class="time-row">
             <input type="time" id="mola_baslangic" name="mola_baslangic" placeholder="12:00" />
             <span class="time-sep">→</span>
@@ -493,6 +493,14 @@
           <div class="chip" data-gun="paz">Paz</div>
         </div>
         <input type="hidden" name="calisma_gunleri" id="calisma_gunleri" value="pzt,sal,car,per,cum" />
+      </div>
+
+      <!-- Günlere Özel Çalışma Saatleri -->
+      <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--clr-border);">
+        <div style="font-weight:600;color:#4f8ef7;margin-bottom:16px;">📅 Günlere Özel Çalışma Saatleri</div>
+        <div id="gunlere-ozel-saatler" style="display:grid;gap:16px;">
+          <!-- Dinamik olarak günler ve saatler eklenecek -->
+        </div>
       </div>
     </div>
 
@@ -556,6 +564,70 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Bölüm 4: Personeller -->
+    <div class="card" style="animation-delay:.24s">
+      <div class="card-title">
+        <div class="icon" style="background:#fecaca;">👤</div>
+        Personelleri Yönet
+      </div>
+
+      <div class="info-box" style="margin-bottom:16px;">
+        <span class="info-icon">💡</span>
+        <div>Personelleri ekleyerek, her personelin ayrı randevu takvimi oluşturabilirsiniz. Örneğin: Ayşe çarşamba günü çalışmıyorsa, çarşamba günü Ayşe'ye randevu verilemez.</div>
+      </div>
+
+      <div id="personeller-listesi" style="display:grid;gap:12px;margin-bottom:16px;">
+        <!-- Dinamik personel satırları eklenecek -->
+      </div>
+
+      <button type="button" id="btn-personel-ekle" onclick="personelSatiEkle()" 
+        style="width:100%;padding:10px;border:2px dashed #ef4444;background:#fee2e2;color:#ef4444;border-radius:10px;font-weight:600;cursor:pointer;transition:.2s;">
+        + Personel Ekle
+      </button>
+    </div>
+    <div class="card" style="animation-delay:.24s">
+      <div class="card-title">
+        <div class="icon" style="background:#fef3c7;">🛎️</div>
+        Sağlanan Hizmetler
+      </div>
+
+      <div class="info-box" style="margin-bottom:16px;">
+        <span class="info-icon">💡</span>
+        <div>Her hizmetin kendine özel minimum süresi olabilir. Örneğin: Saç Kesimi (60 dk), Ense Alma (20 dk) gibi.</div>
+      </div>
+
+      <div id="hizmetler-listesi" style="display:grid;gap:12px;margin-bottom:16px;">
+        <!-- Dinamik hizmet satırları eklenecek -->
+      </div>
+
+      <button type="button" id="btn-hizmet-ekle" onclick="hizmetSatiEkle()" 
+        style="width:100%;padding:10px;border:2px dashed #4f8ef7;background:#f0f7ff;color:#4f8ef7;border-radius:10px;font-weight:600;cursor:pointer;transition:.2s;">
+        + Hizmet Ekle
+      </button>
+    </div>
+
+    <!-- Bölüm 5: Molalar -->
+    <div class="card" style="animation-delay:.32s">
+      <div class="card-title">
+        <div class="icon" style="background:#e0e7ff;">☕</div>
+        Mola Saatleri (Günlere Özel)
+      </div>
+
+      <div class="info-box" style="margin-bottom:16px;">
+        <span class="info-icon">💡</span>
+        <div>Farklı günlerde farklı molalar ayarlayabilirsiniz. Örneğin: Pazartesi 12:00-13:00 ve 15:00-15:30 olmak üzere iki mola belirtebilirsiniz.</div>
+      </div>
+
+      <div id="molalar-listesi" style="display:grid;gap:12px;margin-bottom:16px;">
+        <!-- Dinamik mola satırları eklenecek -->
+      </div>
+
+      <button type="button" id="btn-mola-ekle" onclick="molaSatiEkle()" 
+        style="width:100%;padding:10px;border:2px dashed #a78bfa;background:#ede9fe;color:#a78bfa;border-radius:10px;font-weight:600;cursor:pointer;transition:.2s;">
+        + Mola Ekle
+      </button>
     </div>
 
     <!-- Gönder -->
@@ -645,6 +717,158 @@ function updateKapasite() {
     `${personel} personel × ${slotSayisi} slot (her ${sure} dk) = ${toplamKapasite} randevu`;
 }
 
+/* ── Personeller Yönetimi ─────────────────────────────────── */
+let personelSayac = 0;
+function personelSatiEkle() {
+  personelSayac++;
+  const gunOptions = Object.entries(gunAdlari)
+    .map(([k, v]) => `<option value="${k === 'paz' ? '' : k}">${v}${k === 'paz' ? ' (Hiç)' : ''}</option>`)
+    .join('');
+  
+  const html = `
+    <div class="personel-sati" style="display:grid;grid-template-columns:1fr 150px 150px 40px;gap:10px;align-items:end;padding:12px;background:#fef2f2;border-radius:8px;border:1px solid #fde2e4;">
+      <div class="field" style="margin:0;">
+        <label style="font-size:.75rem;">Personel Adı</label>
+        <input type="text" class="personel-ad" placeholder="Örn: Ayşe Yılmaz" />
+      </div>
+      <div class="field" style="margin:0;">
+        <label style="font-size:.75rem;">Telefon (İsteğe Bağlı)</label>
+        <input type="tel" class="personel-telefon" placeholder="0532 000 00 00" />
+      </div>
+      <div class="field" style="margin:0;">
+        <label style="font-size:.75rem;">Uzmanlık (İsteğe Bağlı)</label>
+        <input type="text" class="personel-uzmanlik" placeholder="Örn: Saç kesimi" />
+      </div>
+      <button type="button" class="btn-personel-sil" onclick="this.closest('.personel-sati').remove()"
+        style="padding:8px;background:#ef4444;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:1.1rem;">
+        ×
+      </button>
+    </div>
+  `;
+  document.getElementById('personeller-listesi').insertAdjacentHTML('beforeend', html);
+}
+
+/* ── Personelleri ekle/düzenle/sil (API) ────────────────── */
+async function kaydetPersonelleri(isletmeId) {
+  const personellerHTML = document.querySelectorAll('.personel-sati');
+  const sonuclar = [];
+
+  for (const sati of personellerHTML) {
+    const ad = sati.querySelector('.personel-ad').value.trim();
+    if (!ad) continue; // Boş satırı atla
+
+    const telefon = sati.querySelector('.personel-telefon').value.trim();
+    const uzmanlik = sati.querySelector('.personel-uzmanlik').value.trim();
+
+    try {
+      const resp = await fetch('http://localhost:3000/api/personel-ekle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          isletme_id: isletmeId,
+          ad,
+          telefon: telefon || null,
+          uzmanlik: uzmanlik || null,
+        })
+      });
+
+      if (!resp.ok) {
+        const data = await resp.json();
+        console.warn('⚠️ Personel eklemede uyarı:', data.hata);
+      } else {
+        console.log(`✅ ${ad} eklendi`);
+        sonuclar.push({ ok: true, ad });
+      }
+    } catch (e) {
+      console.error('❌ Personel ekleme hatası:', e);
+    }
+  }
+
+  return sonuclar;
+}
+let hizmetSayac = 0;
+function hizmetSatiEkle() {
+  hizmetSayac++;
+  const html = `
+    <div class="hizmet-sati" style="display:grid;grid-template-columns:1fr 120px 40px;gap:10px;align-items:end;">
+      <div class="field" style="margin:0;">
+        <label style="font-size:.75rem;">Hizmet Adı</label>
+        <input type="text" class="hizmet-ad" placeholder="Örn: Saç Kesimi" />
+      </div>
+      <div class="field" style="margin:0;">
+        <label style="font-size:.75rem;">Min. Süresi (dk)</label>
+        <input type="number" class="hizmet-min-sure" placeholder="60" value="30" min="15" max="480" />
+      </div>
+      <button type="button" class="btn-hizmet-sil" onclick="this.closest('.hizmet-sati').remove()"
+        style="padding:8px;background:#f87171;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:1.1rem;">
+        ×
+      </button>
+    </div>
+  `;
+  document.getElementById('hizmetler-listesi').insertAdjacentHTML('beforeend', html);
+}
+
+/* ── Molalar Yönetimi ───────────────────────────────────── */
+let molaSayac = 0;
+const gunAdlari = { 'pzt': 'Pazartesi', 'sal': 'Salı', 'car': 'Çarşamba', 'per': 'Perşembe', 'cum': 'Cuma', 'cmt': 'Cumartesi', 'paz': 'Pazar' };
+
+function molaSatiEkle() {
+  molaSayac++;
+  const gunOptions = Object.entries(gunAdlari)
+    .map(([k, v]) => `<option value="${k === 'paz' ? '' : k}">${v}${k === 'paz' ? ' (Her Gün)' : ''}</option>`)
+    .join('');
+  
+  const html = `
+    <div class="mola-sati" style="display:grid;grid-template-columns:140px 100px 20px 100px 40px;gap:10px;align-items:end;">
+      <div class="field" style="margin:0;">
+        <label style="font-size:.75rem;">Gün (İsteğe Bağlı)</label>
+        <select class="mola-gun">
+          ${gunOptions}
+        </select>
+      </div>
+      <div class="field" style="margin:0;">
+        <label style="font-size:.75rem;">Başlangıç</label>
+        <input type="time" class="mola-baslangic" value="12:00" />
+      </div>
+      <div style="text-align:center;font-weight:700;color:#666;">→</div>
+      <div class="field" style="margin:0;">
+        <label style="font-size:.75rem;">Bitiş</label>
+        <input type="time" class="mola-bitis" value="13:00" />
+      </div>
+      <button type="button" onclick="this.closest('.mola-sati').remove()"
+        style="padding:8px;background:#f87171;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:1.1rem;">
+        ×
+      </button>
+    </div>
+  `;
+  document.getElementById('molalar-listesi').insertAdjacentHTML('beforeend', html);
+}
+
+/* ── Günlere Özel Çalışma Saatleri İlkle ─────────────────── */
+function initGunlereOzelSaatler() {
+  const container = document.getElementById('gunlere-ozel-saatler');
+  const gunler = ['pzt', 'sal', 'car', 'per', 'cum', 'cmt', 'paz'];
+  
+  gunler.forEach(gun => {
+    const gunAdi = Object.entries(gunAdlari).find(([k]) => k === gun)[1];
+    const html = `
+      <div class="gunluk-saat" style="display:grid;grid-template-columns:80px 1fr 80px 40px;gap:10px;align-items:center;padding:12px;background:#f8faff;border-radius:8px;border:1px solid #cbd5e1;">
+        <div style="font-weight:600;color:#1e293b;">${gunAdi}</div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="time" class="gunluk-acilis" value="09:00" style="flex:1;padding:8px;border:1px solid #cbd5e1;border-radius:6px;" />
+          <span style="color:#666;font-weight:600;">→</span>
+          <input type="time" class="gunluk-kapanis" value="18:00" style="flex:1;padding:8px;border:1px solid #cbd5e1;border-radius:6px;" />
+        </div>
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer;">
+          <input type="checkbox" class="gunluk-acik" checked style="width:18px;height:18px;cursor:pointer;" />
+          <span style="font-size:.85rem;color:#646;font-weight:500;">Açık</span>
+        </label>
+      </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+  });
+}
+
 /* ── Toast ──────────────────────────────────────────────── */
 function showToast(msg, isError = false) {
   const toast = document.getElementById('toast');
@@ -692,54 +916,135 @@ document.getElementById('isletmeForm').addEventListener('submit', async (e) => {
     max_gunluk_randevu: parseInt(document.getElementById('max_gunluk_randevu').value),
   };
 
+  // Hizmetleri topla
+  const hizmetler = [];
+  document.querySelectorAll('.hizmet-sati').forEach(sati => {
+    const ad = sati.querySelector('.hizmet-ad').value.trim();
+    const minSure = parseInt(sati.querySelector('.hizmet-min-sure').value) || 30;
+    if (ad) {
+      hizmetler.push({ ad, min_sure: minSure });
+    }
+  });
+
+  // Molalar topla
+  const molalar = [];
+  document.querySelectorAll('.mola-sati').forEach(sati => {
+    const gun = sati.querySelector('.mola-gun').value || null;
+    const baslangic = sati.querySelector('.mola-baslangic').value;
+    const bitis = sati.querySelector('.mola-bitis').value;
+    if (baslangic && bitis) {
+      molalar.push({ gun, baslangic_saati: baslangic, bitis_saati: bitis });
+    }
+  });
+
+  // Günlere özel çalışma saatleri topla
+  const calismaProdukt = [];
+  document.querySelectorAll('.gunluk-saat').forEach((sati, i) => {
+    const gunler = ['pzt', 'sal', 'car', 'per', 'cum', 'cmt', 'paz'];
+    const gun = gunler[i];
+    const acilis = sati.querySelector('.gunluk-acilis').value;
+    const kapanis = sati.querySelector('.gunluk-kapanis').value;
+    const acikMi = sati.querySelector('.gunluk-acik').checked;
+    calismaProdukt.push({ gun, acilis_saati: acilis, kapanis_saati: kapanis, acik_mi: acikMi });
+  });
+
   btn.disabled = true;
   btn.textContent = '⏳ Kaydediliyor...';
 
   try {
-    const resp = await fetch('http://localhost:3000/api/isletme-ekle', {
+    // 1. İşletmeyi kaydet
+    const respIsletme = await fetch('http://localhost:3000/api/isletme-ekle', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(veri)
     });
-    const json = await resp.json();
+    const jsonIsletme = await respIsletme.json();
 
-    if (resp.ok) {
-      showToast(json.mesaj || 'İşletme başarıyla kaydedildi!');
-      // Adım göstergesini güncelle
-      document.getElementById('step1').classList.replace('active','done');
-      document.getElementById('step2').classList.add('done');
-      document.getElementById('step3').classList.add('done');
-      // Formu sıfırla
-      setTimeout(() => {
-        document.getElementById('isletmeForm').reset();
-        document.getElementById('personel_sayisi').value = 2;
-        document.querySelectorAll('#gunler-group .chip').forEach((c,i) => c.classList.toggle('selected', i < 5));
-        document.querySelectorAll('#sure-group .chip').forEach((c,i) => c.classList.toggle('selected', c.dataset.sure === '30'));
-        document.getElementById('calisma_gunleri').value = 'pzt,sal,car,per,cum';
-        document.getElementById('randevu_suresi').value = '30';
-        updatePreview(); updateKapasite();
-        ['step1','step2','step3'].forEach((id,i) => {
-          document.getElementById(id).classList.remove('done');
-          if (i === 0) document.getElementById(id).classList.add('active');
-        });
-        btn.disabled = false;
-        btn.textContent = '✅ İşletmeyi Kaydet';
-      }, 2500);
-    } else {
-      showToast(json.hata || 'Bir hata oluştu.', true);
+    if (!respIsletme.ok) {
+      throw new Error(jsonIsletme.hata || 'İşletme kaydı başarısız.');
+    }
+
+    const isletmeId = jsonIsletme.isletmeId;
+    console.log('✅ İşletme kaydı başarılı →', isletmeId);
+
+    // 2. Hizmetleri kaydet
+    for (const hizmet of hizmetler) {
+      await fetch('http://localhost:3000/api/hizmet-ekle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isletme_id: isletmeId, ...hizmet })
+      });
+    }
+    if (hizmetler.length > 0) console.log(`✅ ${hizmetler.length} hizmet kaydedildi`);
+
+    // 3. Molalar kaydet
+    for (const mola of molalar) {
+      await fetch('http://localhost:3000/api/mola-ekle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isletme_id: isletmeId, ...mola })
+      });
+    }
+    if (molalar.length > 0) console.log(`✅ ${molalar.length} mola kaydedildi`);
+
+    // 4. Günlere özel çalışma saatleri kaydet
+    for (const cs of calismaProdukt) {
+      await fetch('http://localhost:3000/api/calisma-saati-ekle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isletme_id: isletmeId, ...cs })
+      });
+    }
+    console.log('✅ Günlere özel çalışma saatleri kaydedildi');
+
+    // 5. Personelleri kaydet
+    const personelSonuclar = await kaydetPersonelleri(isletmeId);
+    if (personelSonuclar.length > 0) {
+      console.log(`✅ ${personelSonuclar.length} personel kaydedildi`);
+    }
+
+    showToast('✅ İşletme ve tüm bilgileri başarıyla kaydedildi!');
+    
+    // Adım göstergesini güncelle
+    document.getElementById('step1').classList.replace('active','done');
+    document.getElementById('step2').classList.add('done');
+    document.getElementById('step3').classList.add('done');
+
+    // Formu sıfırla
+    setTimeout(() => {
+      document.getElementById('isletmeForm').reset();
+      document.getElementById('personel_sayisi').value = 2;
+      document.querySelectorAll('#gunler-group .chip').forEach((c,i) => c.classList.toggle('selected', i < 5));
+      document.querySelectorAll('#sure-group .chip').forEach((c,i) => c.classList.toggle('selected', c.dataset.sure === '30'));
+      document.getElementById('hizmetler-listesi').innerHTML = '';
+      document.getElementById('molalar-listesi').innerHTML = '';
+      document.getElementById('personeller-listesi').innerHTML = '';
+      document.getElementById('calisma_gunleri').value = 'pzt,sal,car,per,cum';
+      document.getElementById('randevu_suresi').value = '30';
+      updatePreview(); updateKapasite();
+      ['step1','step2','step3'].forEach((id,i) => {
+        document.getElementById(id).classList.remove('done');
+        if (i === 0) document.getElementById(id).classList.add('active');
+      });
       btn.disabled = false;
       btn.textContent = '✅ İşletmeyi Kaydet';
-    }
+    }, 2500);
   } catch (err) {
-    showToast('Sunucuya bağlanılamadı. Lütfen server.js çalıştığından emin olun.', true);
+    console.error('❌ Hata:', err);
+    showToast(err.message || 'Sunucuya bağlanılamadı.', true);
     btn.disabled = false;
     btn.textContent = '✅ İşletmeyi Kaydet';
   }
 });
 
-/* ── Başlangıçta Hesapla ─────────────────────────────────── */
+/* ── Başlangıçta Başlat ──────────────────────────────────── */
 updatePreview();
 updateKapasite();
+initGunlereOzelSaatler();
+// Başlangıçta bir hizmet, bir mola ve bir personel satırı ekle
+hizmetSatiEkle();
+molaSatiEkle();
+personelSatiEkle();
 </script>
 </body>
 </html>

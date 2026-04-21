@@ -14,20 +14,36 @@ SQLite veritabanının oluşturulması.
 
 Tabloların SQL ile oluşturulması (CREATE TABLE).
 
-İki ana tablo: businesses (İşletmeler) ve appointments (Randevular).
+Ana tablolar:
+  - businesses (İşletmeler): personel sayısı, çalışma saatleri, hizmet türleri
+  - appointments (Randevular): randevu saati, hizmet türü, müşteri bilgileri
+  - services (Hizmetler): hizmet adı, minimum süre (15 dk+)
+  - working_hours (Çalışma Saatleri): günlere özel çalışma zamanları
+  - breaks (Molalar): gün ve saatlere göre mola tanımları
 
 Faz 2: İşletme Tarafı (Hafta 3-4)
 3. Hafta: İşletme Kayıt Arayüzü (Frontend):
 
 business.html formunun tasarlanması.
 
-Personel sayısı, saatler vb. giriş alanları.
+Bilgi alanları:
+  - Personel sayısı
+  - Saatler (günlere özel çalışma ortamı) - Pazartesi-Cuma 09:00-18:00 vs., veya çarşamba yarım gün 09:00-14:00 gibi
+  - Mola tanımlaması (birden fazla mola): Saat aralıkları (örn: 12:00-13:00, 15:00-15:30)
+  - Sağlanan hizmetler listesi ve her hizmet için minimum süresi (saç kesimi 60 dk, ense alma 20 dk gibi)
 
 4. Hafta: Kayıt API'si (Backend):
 
 Formdan gelen veriyi alıp SQLite veritabanına kaydeden sunucu kodunun yazılması (INSERT INTO).
 
-Hata yönetimi (Örn: Boş alan kontrolü).
+Kaydedilecek veriler:
+  - İşletme bilgileri (ad, telefon vb.)
+  - Hizmetler ve minimum süreler
+  - Günlere özel çalışma saatleri
+  - Mola tanımlaması (birden fazla mola haftanın farklı günlerinde)
+  - Personel sayısı
+
+Hata yönetimi (Örn: Boş alan kontrolü, hizmet süresi minimum 15 dk kontrolü).
 
 Faz 3: Müşteri Tarafı ve Arama (Hafta 5-6)
 5. Hafta: Arama ve Listeleme:
@@ -40,14 +56,28 @@ Veritabanından işletmeleri isme göre çeken arama fonksiyonu (SELECT * FROM b
 
 Seçilen işletmenin çalışma saatlerine göre saat dilimlerini (slotları) oluşturma.
 
-Örn: 09:00 - 18:00 arasını 30'ar dakikalık butonlara bölme.
+Detay:
+  - İşletmenin o gün açık olup olmadığını kontrol et (günlere özel çalışma saati)
+  - Molalar haricinde zaman slotları oluştur
+  - Seçilen hizmetin minimum süresine göre slot boyutunu ayarla (saç kesimi 60 dk, ense alma 20 dk vb.)
+  - Personel sayısına göre kaç müşteri aldığını kontrol et
+
+Örn: 09:00 - 18:00 arasında molalar (12:00-13:00, 15:00-15:30) haricinde 30'ar dakikalık (ya da hizmet süresine göre) butonlara bölme
 
 Faz 4: Mantık ve Tamamlama (Hafta 7-8)
 7. Hafta: Personel ve Çakışma Kontrolü (Zor Kısım):
 
-Randevu kaydetme işlemi.
+Randevu kaydetme işlemi - algoritma:
 
-Algoritma: O saatte kaç randevu var? Eğer sayı < personel sayısı ise onayla, değilse reddet.
+1. **Hizmet süresi kontrol**: Seçilen hizmetin minimum süresi alınır (saç kesimi 60 dk, ense alma 20 dk vb.)
+
+2. **Günlere özel çalışma saati kontrolü**: İşletmenin o gün açık olup olmadığını kontrol et (örn: çarşamba yarım gün 09:00-14:00 mı, yoksa kapalı mı)
+
+3. **Mola kontrolü**: O saatte işletme molada mı? Molalar varsa çakışma var mı?
+
+4. **Personel kapasitesi**: O saat aralığında (hizmet süresi kadar) kaç randevu var? Eğer sayı < personel sayısı ise randevuyu onayla, değilse reddet.
+
+5. **Çakışma kontrolü**: Personel sayısında çakışma olmamalı (örn: 2 personel varsa aynı saatte max 2 randevu)
 
 8. Hafta: Test, Düzeltme ve Dokümantasyon:
 
