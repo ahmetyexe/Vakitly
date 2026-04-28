@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vakitly – Randevu Yönetim Sistemi</title>
+  <meta name="description" content="Vakitly ile çevrenize yakın işletmelerden kolayca randevu alın veya işletmenizi kaydedin." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Design System ─── */
+    :root {
+      --clr-bg:        #f0f7ff;
+      --clr-surface:   #ffffff;
+      --clr-primary:   #4f8ef7;
+      --clr-primary-d: #2563eb;
+      --clr-secondary: #6ee7f7;
+      --clr-accent:    #a78bfa;
+      --clr-success:   #34d399;
+      --clr-warn:      #fbbf24;
+      --clr-danger:    #f87171;
+      --clr-text:      #1e293b;
+      --clr-sub:       #64748b;
+      --clr-border:    #cbd5e1;
+      --radius:        14px;
+      --shadow:        0 8px 32px rgba(79,142,247,.12);
+      --shadow-lg:     0 20px 60px rgba(79,142,247,.18);
+      --transition:    .25s cubic-bezier(.4,0,.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      font-family: 'Inter', sans-serif;
+      background: var(--clr-bg);
+      color: var(--clr-text);
+      min-height: 100vh;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── Header/Nav ─── */
+    header {
+      background: linear-gradient(135deg, #4f8ef7 0%, #818cf8 50%, #a78bfa 100%);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 4px 20px rgba(79,142,247,.3);
+    }
+    .logo {
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+    .logo span { color: #bae6fd; }
+    header p {
+      color: rgba(255,255,255,.85);
+      font-size: .875rem;
+      margin-left: auto;
+    }
+
+    /* ─── Hero Section ─── */
+    .hero {
+      flex: 1;
+      background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      text-align: center;
+    }
+    .hero-content {
+      max-width: 720px;
+      animation: fadeUp .6s ease both;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--clr-primary-d);
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--clr-sub);
+      margin-bottom: 36px;
+      line-height: 1.6;
+    }
+
+    /* ─── Action Buttons ─── */
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 28px;
+      border: none;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all var(--transition);
+      box-shadow: 0 6px 24px rgba(0,0,0,.12);
+      letter-spacing: .3px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Primary Button */
+    .btn-primary {
+      background: linear-gradient(135deg, #4f8ef7 0%, #818cf8 100%);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 32px rgba(79,142,247,.4);
+    }
+    .btn-primary:active { transform: translateY(-1px); }
+
+    /* Secondary Button */
+    .btn-secondary {
+      background: var(--clr-surface);
+      color: var(--clr-primary-d);
+      border: 2px solid var(--clr-primary);
+    }
+    .btn-secondary:hover {
+      transform: translateY(-3px);
+      background: #f0f7ff;
+      box-shadow: 0 10px 32px rgba(79,142,247,.25);
+    }
+    .btn-secondary:active { transform: translateY(-1px); }
+
+    /* ─── Animation ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Features Section ─── */
+    .features {
+      background: var(--clr-surface);
+      padding: 60px 20px;
+      border-top: 1px solid var(--clr-border);
+    }
+    .features-container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .features h2 {
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--clr-primary-d);
+      margin-bottom: 44px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .feature-card {
+      background: linear-gradient(135deg, #f0f9ff 0%, #f5f3ff 100%);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      text-align: center;
+      animation: fadeUp .5s ease both;
+      transition: all var(--transition);
+    }
+    .feature-card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--clr-primary);
+    }
+    .feature-icon {
+      font-size: 2.5rem;
+      margin-bottom: 14px;
+    }
+    .feature-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--clr-primary-d);
+      margin-bottom: 10px;
+    }
+    .feature-desc {
+      font-size: .9rem;
+      color: var(--clr-sub);
+      line-height: 1.6;
+    }
+
+    /* ─── Footer ─── */
+    footer {
+      background: #f8faff;
+      border-top: 1px solid var(--clr-border);
+      padding: 28px 20px;
+      text-align: center;
+      color: var(--clr-sub);
+      font-size: .85rem;
+    }
+    footer a {
+      color: var(--clr-primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    footer a:hover { text-decoration: underline; }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2rem; }
+      .hero p { font-size: .95rem; }
+      .button-group { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      header p { display: none; }
+      .hero { padding: 40px 20px; }
+    }
+
+    @media (max-width: 640px) {
+      header { padding: 14px 16px; }
+      .logo { font-size: 1.4rem; }
+      .hero h1 { font-size: 1.6rem; }
+      .features { padding: 40px 16px; }
+      .features h2 { font-size: 1.4rem; margin-bottom: 28px; }
+      .btn { font-size: .9rem; padding: 14px 22px; }
+    }
+
+    /* ─── Modal ─── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-backdrop.open {
+      display: flex;
+      animation: fadeIn .3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal {
+      background: var(--clr-surface);
+      border-radius: var(--radius);
+      padding: 40px 36px;
+      max-width: 420px;
+      width: calc(100% - 40px);
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      animation: slideUp .3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(40px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: #f1f5f9;
+      color: var(--clr-sub);
+      font-size: 1.5rem;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all var(--transition);
+    }
+    .modal-close:hover {
+      background: var(--clr-border);
+      color: var(--clr-text);
+    }
+
+    .modal-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .modal-icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+    }
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--clr-primary-d);
+      margin-bottom: 6px;
+    }
+    .modal-subtitle {
+      color: var(--clr-sub);
+      font-size: .9rem;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .field label {
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--clr-sub);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .field input {
+      padding: 12px 16px;
+      border: 1.5px solid var(--clr-border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: .95rem;
+      color: var(--clr-text);
+      background: #f8faff;
+      outline: none;
+      transition: all var(--transition);
+    }
+    .field input:focus {
+      border-color: var(--clr-primary);
+      box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.15);
+      background: #fff;
+    }
+    .field input::placeholder {
+      color: #cbd5e1;
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #4f8ef7 0%, #818cf8 100%);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: .95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition);
+      box-shadow: 0 6px 20px rgba(79, 142, 247, 0.3);
+    }
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(79, 142, 247, 0.4);
+    }
+    .btn-login:active {
+      transform: translateY(0);
+    }
+    .btn-login:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .modal-footer {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--clr-border);
+      text-align: center;
+      font-size: .9rem;
+      color: var(--clr-sub);
+    }
+    .signup-link {
+      color: var(--clr-primary);
+      font-weight: 700;
+      text-decoration: none;
+      transition: all var(--transition);
+    }
+    .signup-link:hover {
+      text-decoration: underline;
+      color: var(--clr-primary-d);
+    }
+
+    /* ─── Toast ─── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      background: #1e293b;
+      color: #fff;
+      padding: 14px 24px;
+      border-radius: 10px;
+      font-size: .9rem;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      transition: transform var(--transition);
+      z-index: 1001;
+    }
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+    #toast.success {
+      border-left: 4px solid #34d399;
+    }
+    #toast.error {
+      border-left: 4px solid #f87171;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── Login Modal ─── -->
+<div class="modal-backdrop" id="loginModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+    
+    <div class="modal-header">
+      <div class="modal-icon">🔐</div>
+      <h2 class="modal-title">İşletme Girişi</h2>
+      <p class="modal-subtitle">Hesabınıza giriş yapın</p>
+    </div>
+
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="field">
+        <label for="loginEmail">E-posta Adresi</label>
+        <input type="email" id="loginEmail" name="email" placeholder="isletme@email.com" required />
+      </div>
+
+      <div class="field">
+        <label for="loginPassword">Şifre</label>
+        <input type="password" id="loginPassword" name="password" placeholder="••••••••" required />
+      </div>
+
+      <button type="submit" class="btn btn-login">
+        ✅ Giriş Yap
+      </button>
+    </form>
+
+    <div class="modal-footer">
+      <p>Hesabın yok mu? <a href="business.html" class="signup-link">Hemen kayıt ol</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Toast ─── -->
+<div id="toast"></div>
+<header>
+  <div class="logo">Vakit<span>ly</span></div>
+  <p>Randevu Yönetim Sistemi</p>
+</header>
+
+<!-- ─── Hero Section ─── -->
+<div class="hero">
+  <div class="hero-content">
+    <h1>🕐 Randevu Yönetimi Çok Kolay</h1>
+    <p>Berberden doktora, hukuk müşaviri'den veterinere kadar... İstediğiniz işletmeden randevu alın veya işletmenizi kaydedin!</p>
+    
+    <div class="button-group">
+      <a href="#" class="btn btn-primary" onclick="openLoginModal(); return false;">
+        📅 Randevu Al
+      </a>
+      <button onclick="openLoginModal()" class="btn btn-secondary">
+        🏢 İşletme Girişi
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Features ─── -->
+<section class="features">
+  <div class="features-container">
+    <h2>Vakitly'nin Avantajları</h2>
+    
+    <div class="features-grid">
+      <div class="feature-card" style="animation-delay: 0s">
+        <div class="feature-icon">🔍</div>
+        <div class="feature-title">Akıllı Arama</div>
+        <div class="feature-desc">İstediğiniz işletmeyi adına veya kategorisine göre bulun. Çevrenize yakın berber, doktor, avukat bulun.</div>
+      </div>
+
+      <div class="feature-card" style="animation-delay: .1s">
+        <div class="feature-icon">⏰</div>
+        <div class="feature-title">Müsait Saatleri Gör</div>
+        <div class="feature-desc">İşletmelerin gerçek zamanlı müsait saatlerini görüntüleyin. Hiç telefon etmeye gerek yok!</div>
+      </div>
+
+      <div class="feature-card" style="animation-delay: .2s">
+        <div class="feature-icon">👤</div>
+        <div class="feature-title">Personel Seç</div>
+        <div class="feature-desc">İşletmelerdeki personelleri görün ve seçin. "Beni Ayşe kes, Fatma değil!" diyebilirsiniz.</div>
+      </div>
+
+      <div class="feature-card" style="animation-delay: .3s">
+        <div class="feature-icon">📋</div>
+        <div class="feature-title">Hızlı Kayıt</div>
+        <div class="feature-desc">İşletme sahipleri kolayca kayıt olabilir. Hizmetler, personeller, molalar ekleyin.</div>
+      </div>
+
+      <div class="feature-card" style="animation-delay: .4s">
+        <div class="feature-icon">🛡️</div>
+        <div class="feature-title">Güvenli Sistem</div>
+        <div class="feature-desc">Tüm verileriniz şifreli ve güvenli şekilde saklanır. Bilginiz kimse ile paylaşılmaz.</div>
+      </div>
+
+      <div class="feature-card" style="animation-delay: .5s">
+        <div class="feature-icon">📱</div>
+        <div class="feature-title">Her Cihazda Çalışır</div>
+        <div class="feature-desc">PC, tablet, telefon... Vakitly'yi her yerden kullanabilirsiniz.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Footer ─── -->
+<footer>
+  <p>© 2026 Vakitly. Tüm hakları saklıdır. | <a href="#">Gizlilik Açıklaması</a> | <a href="#">Hizmet Şartları</a></p>
+</footer>
+
+<script>
+/* ─── Modal Functions ─── */
+function openLoginModal() {
+  document.getElementById('loginModal').classList.add('open');
+}
+
+function closeLoginModal() {
+  document.getElementById('loginModal').classList.remove('open');
+}
+
+// Modal dışına tıklanır ise kapat
+document.getElementById('loginModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) {
+    closeLoginModal();
+  }
+});
+
+/* ─── Toast ─── */
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = `show ${type}`;
+  setTimeout(() => {
+    toast.className = '';
+  }, 3500);
+}
+
+/* ─── Login ─── */
+async function handleLogin(e) {
+  e.preventDefault();
+
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  const btn = e.target.querySelector('button[type="submit"]');
+
+  if (!email || !password) {
+    showToast('Email ve şifre zorunludur!', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Giriş yapılıyor...';
+
+  try {
+    const resp = await fetch('http://localhost:3000/api/isletme-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await resp.json();
+
+    if (resp.ok) {
+      showToast('✅ Giriş başarılı!', 'success');
+      // Kullanıcı bilgilerini localStorage'ye kaydet
+      localStorage.setItem('isletmeId', data.isletmeId);
+      localStorage.setItem('isletmeAd', data.isletmeAd);
+      localStorage.setItem('isletmeEmail', email);
+      
+      setTimeout(() => {
+        // Admin paneline yönlendir (şu an hazırlanmadı)
+        alert('👷 Admin paneli şu anda hazırlanıyor. Lütfen daha sonra tekrar deneyin!');
+        window.location.href = '/';
+      }, 1500);
+    } else {
+      showToast(data.hata || 'Giriş başarısız!', 'error');
+    }
+  } catch (err) {
+    showToast('Sunucuya bağlanılamadı!', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✅ Giriş Yap';
+  }
+}
+
+/* ─── "Randevu Al" butonuna tıklandığında ─── */
+// (Şimdilik sadece giriş modal'ı açılıyor, müşteri sayfası sonra yapılacak)
+</script>
+</body>
+</html>

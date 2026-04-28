@@ -449,6 +449,17 @@
         </div>
       </div>
 
+      <div class="grid-2" style="margin-bottom:18px;">
+        <div class="field">
+          <label for="sifre">Şifre <span class="req">*</span></label>
+          <input type="password" id="sifre" name="sifre" placeholder="En az 8 karakter" minlength="8" required />
+        </div>
+        <div class="field">
+          <label for="sifre_dogrula">Şifreyi Doğrula <span class="req">*</span></label>
+          <input type="password" id="sifre_dogrula" name="sifre_dogrula" placeholder="Şifreyi tekrar giriniz" minlength="8" required />
+        </div>
+      </div>
+
       <div class="field">
         <label for="adres">Adres <span class="req">*</span></label>
         <textarea id="adres" name="adres" placeholder="İşletmenizin tam adresini giriniz..." required></textarea>
@@ -886,7 +897,7 @@ document.getElementById('isletmeForm').addEventListener('submit', async (e) => {
   const btn = document.getElementById('submitBtn');
 
   // Basit doğrulama
-  const zorunlu = ['ad', 'kategori', 'telefon', 'adres', 'acilis_saati', 'kapanis_saati'];
+  const zorunlu = ['ad', 'kategori', 'telefon', 'adres', 'acilis_saati', 'kapanis_saati', 'sifre', 'sifre_dogrula'];
   for (const id of zorunlu) {
     if (!document.getElementById(id).value.trim()) {
       document.getElementById(id).focus();
@@ -894,6 +905,23 @@ document.getElementById('isletmeForm').addEventListener('submit', async (e) => {
       return;
     }
   }
+
+  // Şifre doğrulaması
+  const sifre = document.getElementById('sifre').value;
+  const sifreDogrula = document.getElementById('sifre_dogrula').value;
+  
+  if (sifre.length < 8) {
+    document.getElementById('sifre').focus();
+    showToast('Şifre en az 8 karakter olmalıdır!', true);
+    return;
+  }
+  
+  if (sifre !== sifreDogrula) {
+    document.getElementById('sifre_dogrula').focus();
+    showToast('Şifreler eşleşmiyor! Lütfen kontrol edin.', true);
+    return;
+  }
+
   if (!document.getElementById('calisma_gunleri').value) {
     showToast('Lütfen en az bir çalışma günü seçin!', true);
     return;
@@ -906,6 +934,7 @@ document.getElementById('isletmeForm').addEventListener('submit', async (e) => {
     adres:            document.getElementById('adres').value.trim(),
     telefon:          document.getElementById('telefon').value.trim(),
     email:            document.getElementById('email').value.trim(),
+    sifre:            document.getElementById('sifre').value.trim(),
     acilis_saati:     document.getElementById('acilis_saati').value,
     kapanis_saati:    document.getElementById('kapanis_saati').value,
     mola_baslangic:   document.getElementById('mola_baslangic').value || null,

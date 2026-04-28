@@ -2,9 +2,27 @@ const express = require('express');
 const cors    = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const path    = require('path');
+const crypto  = require('crypto');
 
 const app  = express();
 const PORT = 3000;
+
+// ══════════════════════════════════════════════════════════
+//  YARDIMCI FONKSİYONLAR
+// ══════════════════════════════════════════════════════════
+// Şifre hashleme (basit PBKDF2 implementasyonu)
+function hashPassword(password, salt = null) {
+  if (!salt) salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha256').toString('hex');
+  return `${salt}:${hash}`;
+}
+
+// Şifre doğrulama
+function verifyPassword(password, storedHash) {
+  const [salt, hash] = storedHash.split(':');
+  const newHash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha256').toString('hex');
+  return hash === newHash;
+}
 
 // ══════════════════════════════════════════════════════════
 //  MIDDLEWARE
@@ -41,6 +59,7 @@ function initDB() {
                 adres               TEXT    NOT NULL,
                 telefon             TEXT    NOT NULL UNIQUE,
                 email               TEXT,
+                sifre               TEXT    NOT NULL,
                 acilis_saati        TEXT    NOT NULL,
                 kapanis_saati       TEXT    NOT NULL,
                 mola_baslangic      TEXT,
@@ -283,6 +302,11 @@ app.post('/api/isletme-ekle', (req, res) => {
         return res.status(400).json({ hata: hatalar[0], tumHatalar: hatalar });
     }
 
+    // Şifre doğrulaması
+    if (!veri.sifre || veri.sifre.length < 8) {
+        return res.status(400).json({ hata: 'Şifre en az 8 karakter olmalıdır.' });
+    }
+
     // 2) Veriyi temizle / normalize et
     const temiz = {
         ad:                 veri.ad.trim(),
@@ -290,6 +314,7 @@ app.post('/api/isletme-ekle', (req, res) => {
         adres:              veri.adres.trim(),
         telefon:            veri.telefon.trim(),
         email:              veri.email ? veri.email.trim().toLowerCase() : null,
+        sifre:              hashPassword(veri.sifre),
         acilis_saati:       veri.acilis_saati,
         kapanis_saati:      veri.kapanis_saati,
         mola_baslangic:     veri.mola_baslangic  || null,
@@ -303,15 +328,15 @@ app.post('/api/isletme-ekle', (req, res) => {
     // 3) INSERT INTO
     const sql = `
         INSERT INTO isletmeler
-            (ad, kategori, adres, telefon, email,
+            (ad, kategori, adres, telefon, email, sifre,
              acilis_saati, kapanis_saati,
              mola_baslangic, mola_bitis, calisma_gunleri,
              personel_sayisi, randevu_suresi, max_gunluk_randevu)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const params = [
-        temiz.ad, temiz.kategori, temiz.adres, temiz.telefon, temiz.email,
+        temiz.ad, temiz.kategori, temiz.adres, temiz.telefon, temiz.email, temiz.sifre,
         temiz.acilis_saati, temiz.kapanis_saati,
         temiz.mola_baslangic, temiz.mola_bitis, temiz.calisma_gunleri,
         temiz.personel_sayisi, temiz.randevu_suresi, temiz.max_gunluk_randevu,
@@ -333,7 +358,7 @@ app.post('/api/isletme-ekle', (req, res) => {
         res.status(201).json({
             mesaj:     '✅ İşletme başarıyla kaydedildi!',
             isletmeId: this.lastID,
-            isletme:   { id: this.lastID, ...temiz },
+            isletme:   { id: this.lastID, ad: temiz.ad, kategori: temiz.kategori },
         });
     });
 });
@@ -975,6 +1000,45 @@ app.delete('/api/personel/:id', (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════
+//  API: İŞLETME GİRİŞİ  (POST /api/isletme-login)
+// ══════════════════════════════════════════════════════════
+app.post('/api/isletme-login', (req, res) => {
+    const { email, password } = req.body;
+
+    // Doğrulama
+    if (!email || !password) {
+        return res.status(400).json({ hata: 'Email ve şifre gereklidir.' });
+    }
+
+    // Veritabanında email ile ara
+    db.get('SELECT id, ad, email, sifre FROM isletmeler WHERE email = ? OR telefon = ?', 
+           [email, email], (err, row) => {
+        if (err) {
+            console.error('❌ Login hatası:', err.message);
+            return res.status(500).json({ hata: 'Sunucu hatası' });
+        }
+
+        if (!row) {
+            return res.status(401).json({ hata: 'Email veya şifre hatalı.' });
+        }
+
+        // Şifre doğrulaması
+        if (!verifyPassword(password, row.sifre)) {
+            return res.status(401).json({ hata: 'Email veya şifre hatalı.' });
+        }
+
+        // Başarılı login
+        console.log(`✅ İşletme girişi → ID: ${row.id} | ${row.ad}`);
+        res.json({
+            mesaj: '✅ Giriş başarılı!',
+            isletmeId: row.id,
+            isletmeAd: row.ad,
+            email: row.email,
+        });
+    });
+});
+
+// ══════════════════════════════════════════════════════════
 //  404 Yakalayıcı (tanımsız endpoint'ler için)
 // ══════════════════════════════════════════════════════════
 app.use((req, res) => {
@@ -990,6 +1054,7 @@ app.listen(PORT, () => {
     console.log('Mevcut Endpoint\'ler:');
     console.log('  POSTİŞLETME:');
     console.log('    POST   /api/isletme-ekle');
+    console.log('    POST   /api/isletme-login');
     console.log('    GET    /api/isletmeler?q=&kategori=');
     console.log('    GET    /api/isletme/:id');
     console.log('    PUT    /api/isletme/:id');
